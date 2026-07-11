@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Stunner — Real people. Verified profiles. Delhi.</title>
+<meta name="description" content="Stunner is Delhi's verified-only dating app. Every stunner is real — human-verified before going live. No bots, no catfish, no fakes.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FFF9F3;
+  --ink:#26191F;
+  --ink-soft:#6E5F66;
+  --rani:#D6336C;
+  --rani-deep:#B02458;
+  --peacock:#0E6B63;
+  --marigold:#F2A93B;
+  --line:#EADFD4;
+  --card:#FFFFFF;
+  --danger:#C0392B;
+  --radius:18px;
+  --shadow:0 10px 30px rgba(38,25,31,.09);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:'Instrument Sans',system-ui,sans-serif;
+  background:var(--paper);color:var(--ink);
+  min-height:100dvh;line-height:1.55;
+}
+h1,h2,h3,.display{font-family:'Bricolage Grotesque',sans-serif}
+button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select,textarea{font:inherit;color:var(--ink)}
+img{display:block}
+a{color:var(--peacock)}
+:focus-visible{outline:3px solid var(--marigold);outline-offset:2px;border-radius:6px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ---------- shared ---------- */
+.screen{display:none;min-height:100dvh}
+.screen.active{display:block}
+.shell{max-width:480px;margin:0 auto;padding:20px;min-height:100dvh;display:flex;flex-direction:column}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  background:var(--rani);color:#fff;font-weight:600;
+  padding:14px 26px;border-radius:999px;transition:transform .12s,background .12s;
+  width:100%;font-size:1.02rem;
+}
+.btn:hover{background:var(--rani-deep);transform:translateY(-1px)}
+.btn:disabled{opacity:.5;pointer-events:none}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.btn.ghost:hover{background:#fff}
+.btn.quiet{background:var(--peacock)}
+.btn.quiet:hover{background:#0a544e}
+.field{margin-bottom:16px}
+.field label{display:block;font-weight:600;font-size:.88rem;margin-bottom:6px}
+.field input,.field select,.field textarea{
+  width:100%;padding:13px 14px;border:1.5px solid var(--line);
+  border-radius:12px;background:#fff;
+}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--rani);outline:none}
+.hint{font-size:.82rem;color:var(--ink-soft);margin-top:5px}
+.error-msg{color:var(--danger);font-size:.88rem;margin:10px 0;min-height:1.2em}
+.tag{display:inline-block;font-size:.75rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--peacock)}
+
+/* ---------- the STUNNER stamp (signature element) ---------- */
+.stamp{
+  display:inline-flex;flex-direction:column;align-items:center;justify-content:center;
+  width:96px;height:96px;border-radius:50%;
+  border:3px solid var(--peacock);box-shadow:inset 0 0 0 2px var(--paper), inset 0 0 0 4.5px var(--peacock);
+  color:var(--peacock);transform:rotate(-8deg);
+  font-family:'Bricolage Grotesque',sans-serif;font-weight:800;letter-spacing:.08em;
+  user-select:none;
+}
+.stamp .s-top{font-size:.55rem;letter-spacing:.22em}
+.stamp .s-main{font-size:.92rem;line-height:1.1}
+.stamp .s-check{font-size:1rem}
+.stamp.sm{width:52px;height:52px;border-width:2px;box-shadow:inset 0 0 0 1.5px #fff, inset 0 0 0 3px var(--peacock)}
+.stamp.sm .s-top{display:none}
+.stamp.sm .s-main{font-size:.44rem}
+.stamp.sm .s-check{font-size:.7rem}
+
+/* ---------- landing ---------- */
+#screen-landing .shell{justify-content:flex-start;gap:0}
+.land-top{display:flex;align-items:center;justify-content:space-between;padding:6px 0 30px}
+.logo{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:1.5rem;letter-spacing:-.02em}
+.logo em{font-style:normal;color:var(--rani)}
+.hero{padding:24px 0 8px}
+.hero h1{font-size:clamp(2.4rem,9vw,3.4rem);line-height:1.04;letter-spacing:-.03em;font-weight:800;margin:18px 0 14px}
+.hero h1 .u{color:var(--rani)}
+.hero p{color:var(--ink-soft);font-size:1.06rem;max-width:34ch}
+.hero .city{margin-top:14px;font-weight:600;color:var(--peacock)}
+.points{margin:34px 0;display:grid;gap:14px}
+.point{background:var(--card);border:1.5px solid var(--line);border-radius:var(--radius);padding:16px 18px;display:flex;gap:14px;align-items:flex-start}
+.point b{display:block;font-size:.98rem}
+.point span{font-size:.88rem;color:var(--ink-soft)}
+.point .dot{width:10px;height:10px;border-radius:50%;background:var(--marigold);margin-top:7px;flex-shrink:0}
+.land-cta{margin-top:auto;padding:16px 0 8px;display:grid;gap:10px}
+.legal-links{text-align:center;font-size:.8rem;color:var(--ink-soft);padding:12px 0}
+.legal-links button{text-decoration:underline;color:var(--ink-soft)}
+
+/* ---------- auth ---------- */
+.back{align-self:flex-start;font-weight:600;color:var(--ink-soft);padding:4px 0;margin-bottom:8px}
+.auth-head{margin:8px 0 22px}
+.auth-head h2{font-size:1.9rem;letter-spacing:-.02em}
+.auth-head p{color:var(--ink-soft)}
+.switch-auth{text-align:center;margin-top:16px;font-size:.92rem;color:var(--ink-soft)}
+.switch-auth button{color:var(--rani);font-weight:600;text-decoration:underline}
+
+/* ---------- onboarding / verify / pending ---------- */
+.steps{font-size:.8rem;font-weight:600;letter-spacing:.08em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px}
+.photo-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:8px 0 4px}
+.photo-slot{
+  aspect-ratio:3/4;border:2px dashed var(--line);border-radius:14px;background:#fff;
+  display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;
+  color:var(--ink-soft);font-size:1.6rem;
+}
+.photo-slot img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.photo-slot .rm{position:absolute;top:6px;right:6px;background:rgba(38,25,31,.75);color:#fff;width:26px;height:26px;border-radius:50%;font-size:.85rem;display:flex;align-items:center;justify-content:center;z-index:2}
+.code-box{
+  font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:2.6rem;letter-spacing:.35em;
+  text-align:center;background:#fff;border:2px solid var(--peacock);color:var(--peacock);
+  border-radius:14px;padding:18px 8px 18px 18px;margin:16px 0;
+}
+.center-card{margin:auto 0;text-align:center;display:flex;flex-direction:column;align-items:center;gap:16px;padding:30px 0}
+.center-card h2{font-size:1.7rem}
+.center-card p{color:var(--ink-soft);max-width:36ch}
+
+/* ---------- main app ---------- */
+#screen-app .shell{padding-bottom:86px}
+.app-top{display:flex;align-items:center;justify-content:space-between;padding:4px 0 14px}
+.tabs{
+  position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1.5px solid var(--line);
+  display:flex;justify-content:space-around;padding:10px 8px calc(10px + env(safe-area-inset-bottom));
+  max-width:480px;margin:0 auto;z-index:20;
+}
+.tab-btn{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:.72rem;font-weight:600;color:var(--ink-soft);padding:4px 14px;border-radius:10px}
+.tab-btn.active{color:var(--rani)}
+.tab-btn .ico{font-size:1.3rem}
+.panel{display:none}
+.panel.active{display:block}
+
+/* discover card */
+.deck{position:relative}
+.pcard{
+  background:var(--card);border-radius:22px;overflow:hidden;box-shadow:var(--shadow);
+  border:1.5px solid var(--line);
+}
+.pcard .ph{position:relative;aspect-ratio:3/4;background:var(--line)}
+.pcard .ph img{width:100%;height:100%;object-fit:cover}
+.pcard .ph .stamp.sm{position:absolute;top:12px;right:12px;background:rgba(255,255,255,.92)}
+.pcard .info{padding:16px 18px 18px}
+.pcard .info h3{font-size:1.45rem;letter-spacing:-.02em}
+.pcard .info .meta{color:var(--ink-soft);font-size:.9rem;margin:2px 0 8px}
+.pcard .info .bio{font-size:.95rem;white-space:pre-wrap}
+.pcard .more{position:absolute;top:12px;left:12px;background:rgba(255,255,255,.92);width:36px;height:36px;border-radius:50%;font-size:1.2rem;line-height:1;display:flex;align-items:center;justify-content:center}
+.actions{display:flex;justify-content:center;gap:18px;padding:18px 0 6px}
+.act{
+  width:66px;height:66px;border-radius:50%;font-size:1.7rem;background:#fff;
+  border:1.5px solid var(--line);box-shadow:var(--shadow);transition:transform .12s;
+}
+.act:hover{transform:scale(1.07)}
+.act.like{border-color:var(--rani);color:var(--rani)}
+.act.pass{color:var(--ink-soft)}
+.empty{padding:60px 20px;text-align:center;color:var(--ink-soft)}
+.empty h3{color:var(--ink);margin-bottom:8px}
+
+/* matches */
+.match-row{
+  display:flex;align-items:center;gap:14px;background:#fff;border:1.5px solid var(--line);
+  border-radius:16px;padding:12px 14px;margin-bottom:10px;width:100%;text-align:left;
+}
+.match-row img,.avatar-fallback{width:58px;height:58px;border-radius:50%;object-fit:cover;background:var(--line);flex-shrink:0}
+.avatar-fallback{display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--ink-soft)}
+.match-row b{display:block}
+.match-row span{font-size:.85rem;color:var(--ink-soft)}
+
+/* chat */
+#panel-chat{display:none;flex-direction:column;position:fixed;inset:0;background:var(--paper);z-index:30;max-width:480px;margin:0 auto}
+#panel-chat.active{display:flex}
+.chat-head{display:flex;align-items:center;gap:12px;padding:14px 16px;background:#fff;border-bottom:1.5px solid var(--line)}
+.chat-head img{width:40px;height:40px;border-radius:50%;object-fit:cover}
+.chat-head b{flex:1}
+.msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px}
+.msg{max-width:76%;padding:10px 14px;border-radius:16px;font-size:.95rem;word-wrap:break-word}
+.msg.me{align-self:flex-end;background:var(--rani);color:#fff;border-bottom-right-radius:4px}
+.msg.them{align-self:flex-start;background:#fff;border:1.5px solid var(--line);border-bottom-left-radius:4px}
+.chat-input{display:flex;gap:8px;padding:12px 14px calc(12px + env(safe-area-inset-bottom));background:#fff;border-top:1.5px solid var(--line)}
+.chat-input input{flex:1;padding:12px 14px;border:1.5px solid var(--line);border-radius:999px}
+.chat-input button{background:var(--rani);color:#fff;width:46px;height:46px;border-radius:50%;font-size:1.1rem;flex-shrink:0}
+
+/* profile panel */
+.me-card{background:#fff;border:1.5px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:14px}
+.me-card .row{display:flex;align-items:center;gap:14px;margin-bottom:8px}
+.me-card img{width:70px;height:70px;border-radius:50%;object-fit:cover}
+
+/* modal */
+.modal-back{position:fixed;inset:0;background:rgba(38,25,31,.5);display:none;align-items:flex-end;justify-content:center;z-index:50}
+.modal-back.open{display:flex}
+.modal{background:#fff;border-radius:22px 22px 0 0;padding:22px;width:100%;max-width:480px;max-height:85dvh;overflow-y:auto}
+.modal h3{margin-bottom:12px}
+.modal .opt{display:block;width:100%;text-align:left;padding:13px 14px;border:1.5px solid var(--line);border-radius:12px;margin-bottom:8px;font-weight:500}
+.modal .opt:hover{border-color:var(--rani)}
+.modal .opt.danger{color:var(--danger)}
+
+/* toast */
+#toast{position:fixed;top:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 20px;border-radius:999px;font-size:.9rem;z-index:99;display:none;max-width:90vw;text-align:center}
+
+/* match celebration */
+#match-pop{position:fixed;inset:0;background:rgba(214,51,108,.95);display:none;flex-direction:column;align-items:center;justify-content:center;color:#fff;z-index:60;text-align:center;padding:24px}
+#match-pop.open{display:flex}
+#match-pop h2{font-size:2.4rem;margin:14px 0 6px}
+#match-pop .btn{max-width:280px;background:#fff;color:var(--rani);margin-top:22px}
+</style>
+</head>
+<body>
+
+<!-- ============ LANDING ============ -->
+<section class="screen active" id="screen-landing">
+  <div class="shell">
+    <div class="land-top">
+      <div class="logo">stunner<em>.</em></div>
+      <button class="btn ghost" style="width:auto;padding:9px 20px" onclick="showAuth('login')">Log in</button>
+    </div>
+    <div class="hero">
+      <div class="stamp"><span class="s-top">100% VERIFIED</span><span class="s-main">STUNNER</span><span class="s-check">✓</span></div>
+      <h1>Dating with <span class="u">zero fakes</span>. Finally.</h1>
+      <p>Every single profile on Stunner is verified by a human before it goes live. No bots. No catfish. No stolen photos. Just real people.</p>
+      <p class="city">Now matching Delhi's stunners 📍</p>
+    </div>
+    <div class="points">
+      <div class="point"><div class="dot"></div><div><b>Selfie-verified, every profile</b><span>You see the badge because a human checked the face matches the photos.</span></div></div>
+      <div class="point"><div class="dot"></div><div><b>Report once, we act fast</b><span>Offensive photos or messages get accounts reviewed and banned. For good.</span></div></div>
+      <div class="point"><div class="dot"></div><div><b>Your photos stay yours</b><span>No ads, no selling your data. Delete your account any time, everything goes with it.</span></div></div>
+    </div>
+    <div class="land-cta">
+      <button class="btn" onclick="showAuth('signup')">Create my verified profile</button>
+    </div>
+    <div class="legal-links">
+      18+ only · <button onclick="openLegal('terms')">Terms</button> · <button onclick="openLegal('privacy')">Privacy</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ AUTH ============ -->
+<section class="screen" id="screen-auth">
+  <div class="shell">
+    <button class="back" onclick="show('screen-landing')">← Back</button>
+    <div class="auth-head">
+      <h2 id="auth-title">Create your account</h2>
+      <p id="auth-sub">Takes two minutes. Verification keeps everyone safe.</p>
+    </div>
+    <div class="field"><label for="auth-email">Email</label><input id="auth-email" type="email" autocomplete="email" placeholder="you@example.com"></div>
+    <div class="field"><label for="auth-pass">Password</label><input id="auth-pass" type="password" autocomplete="new-password" placeholder="8+ characters"></div>
+    <div class="error-msg" id="auth-error"></div>
+    <button class="btn" id="auth-btn" onclick="doAuth()">Sign up</button>
+    <div class="switch-auth" id="auth-switch">
+      Already on Stunner? <button onclick="showAuth('login')">Log in</button>
+    </div>
+    <p class="hint" style="text-align:center;margin-top:14px">By continuing you confirm you're 18 or older and agree to our <button style="text-decoration:underline" onclick="openLegal('terms')">Terms</button>.</p>
+  </div>
+</section>
+
+<!-- ============ ONBOARDING ============ -->
+<section class="screen" id="screen-onboarding">
+  <div class="shell">
+    <div class="steps">Step 1 of 2 — Your profile</div>
+    <h2 style="margin-bottom:18px">Tell Delhi who you are</h2>
+    <div class="field"><label for="ob-name">First name</label><input id="ob-name" maxlength="40" placeholder="Your first name"></div>
+    <div class="field"><label for="ob-dob">Date of birth</label><input id="ob-dob" type="date"><div class="hint">You must be 18 or older. This can't be changed later.</div></div>
+    <div class="field"><label for="ob-gender">I am a</label>
+      <select id="ob-gender"><option value="">Select…</option><option value="man">Man</option><option value="woman">Woman</option><option value="nonbinary">Non-binary</option></select>
+    </div>
+    <div class="field"><label for="ob-interest">Show me</label>
+      <select id="ob-interest"><option value="">Select…</option><option value="men">Men</option><option value="women">Women</option><option value="everyone">Everyone</option></select>
+    </div>
+    <div class="field"><label for="ob-bio">About you</label><textarea id="ob-bio" rows="3" maxlength="500" placeholder="What should a match know about you?"></textarea></div>
+    <div class="field">
+      <label>Photos (1–4, first one is your main photo)</label>
+      <div class="photo-grid" id="photo-grid"></div>
+      <input type="file" id="photo-input" accept="image/*" hidden>
+    </div>
+    <div class="error-msg" id="ob-error"></div>
+    <button class="btn" id="ob-btn" onclick="saveOnboarding()">Continue to verification</button>
+    <div style="height:24px"></div>
+  </div>
+</section>
+
+<!-- ============ VERIFY ============ -->
+<section class="screen" id="screen-verify">
+  <div class="shell">
+    <div class="steps">Step 2 of 2 — Verification</div>
+    <h2 style="margin-bottom:10px">Prove you're really you 😄</h2>
+    <p style="color:var(--ink-soft)">Write this code on a piece of paper, hold it next to your face, and take a selfie. A human reviews it — usually within a few hours.</p>
+    <div class="code-box" id="verify-code">····</div>
+    <div class="photo-slot" style="max-width:240px;margin:0 auto" id="selfie-slot" onclick="document.getElementById('selfie-input').click()">＋</div>
+    <input type="file" id="selfie-input" accept="image/*" capture="user" hidden>
+    <div class="error-msg" id="verify-error"></div>
+    <button class="btn" id="verify-btn" onclick="submitVerification()" style="margin-top:14px">Submit for review</button>
+    <p class="hint" style="text-align:center;margin-top:12px">Your selfie is only visible to the review team, never on your profile.</p>
+  </div>
+</section>
+
+<!-- ============ PENDING ============ -->
+<section class="screen" id="screen-pending">
+  <div class="shell"><div class="center-card">
+    <div class="stamp"><span class="s-top">IN REVIEW</span><span class="s-main">STUNNER</span><span class="s-check">⏳</span></div>
+    <h2>Verification in review</h2>
+    <p>A human is checking your selfie against your photos. You'll be in as soon as you're approved — check back soon.</p>
+    <button class="btn ghost" onclick="route()">Check status</button>
+    <button class="btn ghost" onclick="logout()">Log out</button>
+  </div></div>
+</section>
+
+<!-- ============ BANNED ============ -->
+<section class="screen" id="screen-banned">
+  <div class="shell"><div class="center-card">
+    <h2>Account suspended</h2>
+    <p>This account was suspended for violating Stunner's community guidelines. If you believe this is a mistake, contact support@stunner.dating.</p>
+    <button class="btn ghost" onclick="logout()">Log out</button>
+  </div></div>
+</section>
+
+<!-- ============ MAIN APP ============ -->
+<section class="screen" id="screen-app">
+  <div class="shell">
+    <div class="app-top">
+      <div class="logo">stunner<em>.</em></div>
+      <div class="stamp sm"><span class="s-main">STUNNER</span><span class="s-check">✓</span></div>
+    </div>
+
+    <!-- Discover -->
+    <div class="panel active" id="panel-discover">
+      <div class="deck" id="deck"></div>
+      <div class="actions" id="deck-actions" style="display:none">
+        <button class="act pass" onclick="swipe(false)" aria-label="Pass">✕</button>
+        <button class="act like" onclick="swipe(true)" aria-label="Like">♥</button>
+      </div>
+    </div>
+
+    <!-- Matches -->
+    <div class="panel" id="panel-matches">
+      <h2 style="margin-bottom:14px">Matches</h2>
+      <div id="matches-list"></div>
+    </div>
+
+    <!-- Me -->
+    <div class="panel" id="panel-me">
+      <h2 style="margin-bottom:14px">You</h2>
+      <div class="me-card" id="me-card"></div>
+      <button class="btn ghost" style="margin-bottom:10px" onclick="openLegal('privacy')">Privacy policy</button>
+      <button class="btn ghost" style="margin-bottom:10px" onclick="openLegal('terms')">Terms of use</button>
+      <button class="btn ghost" onclick="logout()">Log out</button>
+    </div>
+  </div>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="discover" onclick="switchTab('discover')"><span class="ico">✦</span>Discover</button>
+    <button class="tab-btn" data-tab="matches" onclick="switchTab('matches')"><span class="ico">♥</span>Matches</button>
+    <button class="tab-btn" data-tab="me" onclick="switchTab('me')"><span class="ico">☺</span>You</button>
+  </nav>
+</section>
+
+<!-- ============ CHAT (overlay) ============ -->
+<div id="panel-chat">
+  <div class="chat-head">
+    <button onclick="closeChat()" aria-label="Back">←</button>
+    <img id="chat-avatar" alt="">
+    <b id="chat-name"></b>
+    <button onclick="openProfileMenu(currentChat.otherId)" aria-label="Options" style="font-size:1.3rem">⋯</button>
+  </div>
+  <div class="msgs" id="msgs"></div>
+  <div class="chat-input">
+    <input id="msg-input" placeholder="Message…" maxlength="2000" onkeydown="if(event.key==='Enter')sendMsg()">
+    <button onclick="sendMsg()" aria-label="Send">➤</button>
+  </div>
+</div>
+
+<!-- ============ REPORT / BLOCK MODAL ============ -->
+<div class="modal-back" id="menu-modal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal">
+    <h3>Options</h3>
+    <button class="opt danger" onclick="openReport()">🚩 Report this person</button>
+    <button class="opt danger" onclick="doBlock()">🚫 Block this person</button>
+    <button class="opt" onclick="closeModal('menu-modal')">Cancel</button>
+  </div>
+</div>
+
+<div class="modal-back" id="report-modal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal">
+    <h3>Report</h3>
+    <p class="hint" style="margin-bottom:12px">Reports are reviewed by a human. The person won't know you reported them.</p>
+    <div class="field"><label for="report-reason">Reason</label>
+      <select id="report-reason">
+        <option value="offensive_photos">Offensive or inappropriate photos</option>
+        <option value="offensive_messages">Offensive or abusive messages</option>
+        <option value="fake">Fake profile / catfish</option>
+        <option value="harassment">Harassment</option>
+        <option value="spam">Spam or scam</option>
+        <option value="other">Something else</option>
+      </select>
+    </div>
+    <div class="field"><label for="report-details">Details (optional)</label><textarea id="report-details" rows="3" maxlength="1000"></textarea></div>
+    <button class="btn" onclick="submitReport()">Submit report</button>
+    <button class="opt" style="margin-top:8px" onclick="closeModal('report-modal')">Cancel</button>
+  </div>
+</div>
+
+<!-- ============ LEGAL MODAL ============ -->
+<div class="modal-back" id="legal-modal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal">
+    <h3 id="legal-title"></h3>
+    <div id="legal-body" style="font-size:.9rem;color:var(--ink-soft)"></div>
+    <button class="btn ghost" style="margin-top:14px" onclick="closeModal('legal-modal')">Close</button>
+  </div>
+</div>
+
+<div id="toast" role="status"></div>
+
+<div id="match-pop">
+  <div class="stamp" style="border-color:#fff;color:#fff;box-shadow:inset 0 0 0 2px var(--rani), inset 0 0 0 4.5px #fff"><span class="s-top">IT'S A</span><span class="s-main">MATCH</span><span class="s-check">♥</span></div>
+  <h2>It's a match!</h2>
+  <p id="match-pop-name" style="font-size:1.05rem"></p>
+  <button class="btn" onclick="closeMatchPop(true)">Say hi</button>
+  <button style="margin-top:14px;color:#fff;text-decoration:underline" onclick="closeMatchPop(false)">Keep browsing</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+/* ================= CONFIG — fill these two in ================= */
+const SUPABASE_URL = "https://dskrgmsyucnqnlideiit.supabase.co";        // e.g. https://abcd1234.supabase.co
+const SUPABASE_ANON_KEY = "sb_publishable_s5uEsKXzrtm8sLz1uiSIJw_Z8h41_YZ";
+/* =============================================================== */
+
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let me = null;          // my profile row
+let session = null;
+let deckCards = [];     // feed queue
+let currentCard = null;
+let myMatches = [];     // [{match, other}]
+let currentChat = { matchId: null, otherId: null, channel: null };
+let lastNewMatch = null;
+let photoFiles = [null, null, null, null]; // local files or existing URLs
+let selfieFile = null;
+
+/* ---------- tiny helpers ---------- */
+const $ = id => document.getElementById(id);
+function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); $(id).classList.add('active'); window.scrollTo(0,0); }
+function toast(t){ const el=$('toast'); el.textContent=t; el.style.display='block'; clearTimeout(el._t); el._t=setTimeout(()=>el.style.display='none', 2600); }
+function closeModal(id){ $(id).classList.remove('open'); }
+function ageOf(dob){ const d=new Date(dob), n=new Date(); let a=n.getFullYear()-d.getFullYear(); if(n<new Date(n.getFullYear(),d.getMonth(),d.getDate())) a--; return a; }
+function esc(s){ const d=document.createElement('div'); d.textContent=s??''; return d.innerHTML; }
+
+async function compress(file, max=1080){
+  const img = await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=URL.createObjectURL(file); });
+  const scale = Math.min(1, max/Math.max(img.width,img.height));
+  const c = document.createElement('canvas');
+  c.width = Math.round(img.width*scale); c.height = Math.round(img.height*scale);
+  c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+  return new Promise(res=>c.toBlob(res,'image/jpeg',0.82));
+}
+
+/* ---------- routing ---------- */
+async function route(){
+  const { data: { session: s } } = await db.auth.getSession();
+  session = s;
+  if(!session){ show('screen-landing'); return; }
+  const { data: prof } = await db.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
+  me = prof;
+  if(!me || !me.name || !(me.photos||[]).length){ prepOnboarding(); show('screen-onboarding'); return; }
+  if(me.status === 'onboarding'){ await prepVerify(); show('screen-verify'); return; }
+  if(me.status === 'pending'){ show('screen-pending'); return; }
+  if(me.status === 'banned'){ show('screen-banned'); return; }
+  show('screen-app'); enterApp();
+}
+db.auth.onAuthStateChange((_e,_s)=>{ /* handled via route() calls */ });
+
+/* ---------- auth ---------- */
+let authMode = 'signup';
+function showAuth(mode){
+  authMode = mode;
+  $('auth-title').textContent = mode==='signup' ? 'Create your account' : 'Welcome back';
+  $('auth-sub').textContent = mode==='signup' ? "Takes two minutes. Verification keeps everyone safe." : "Log in to keep matching.";
+  $('auth-btn').textContent = mode==='signup' ? 'Sign up' : 'Log in';
+  $('auth-switch').innerHTML = mode==='signup'
+    ? `Already on Stunner? <button onclick="showAuth('login')">Log in</button>`
+    : `New here? <button onclick="showAuth('signup')">Sign up</button>`;
+  $('auth-error').textContent='';
+  show('screen-auth');
+}
+async function doAuth(){
+  const email=$('auth-email').value.trim(), pass=$('auth-pass').value;
+  $('auth-error').textContent='';
+  if(!email || pass.length<8){ $('auth-error').textContent='Enter your email and a password of 8+ characters.'; return; }
+  $('auth-btn').disabled=true;
+  const fn = authMode==='signup' ? db.auth.signUp({email,password:pass}) : db.auth.signInWithPassword({email,password:pass});
+  const { data, error } = await fn;
+  $('auth-btn').disabled=false;
+  if(error){ $('auth-error').textContent=error.message; return; }
+  if(authMode==='signup' && !data.session){ $('auth-error').textContent='Check your email to confirm your account, then log in.'; return; }
+  route();
+}
+async function logout(){ await db.auth.signOut(); me=null; session=null; show('screen-landing'); }
+
+/* ---------- onboarding ---------- */
+function prepOnboarding(){
+  if(me){
+    $('ob-name').value = me.name||''; $('ob-dob').value = me.dob||'';
+    $('ob-gender').value = me.gender||''; $('ob-interest').value = me.interested_in||'';
+    $('ob-bio').value = me.bio||'';
+    (me.photos||[]).forEach((u,i)=>{ if(i<4) photoFiles[i]=u; });
+  }
+  renderPhotoGrid();
+}
+function renderPhotoGrid(){
+  const g=$('photo-grid'); g.innerHTML='';
+  for(let i=0;i<4;i++){
+    const slot=document.createElement('div'); slot.className='photo-slot';
+    const f=photoFiles[i];
+    if(f){
+      const img=document.createElement('img'); img.alt='Your photo';
+      img.src = typeof f==='string' ? f : URL.createObjectURL(f);
+      const rm=document.createElement('button'); rm.className='rm'; rm.textContent='✕'; rm.setAttribute('aria-label','Remove photo');
+      rm.onclick=e=>{ e.stopPropagation(); photoFiles[i]=null; photoFiles=photoFiles.filter(Boolean); while(photoFiles.length<4)photoFiles.push(null); renderPhotoGrid(); };
+      slot.append(img,rm);
+    } else {
+      slot.textContent='＋';
+      slot.onclick=()=>{ slot._target=i; $('photo-input')._slot=i; $('photo-input').click(); };
+    }
+    g.appendChild(slot);
+  }
+}
+$('photo-input').addEventListener('change', e=>{
+  const f=e.target.files[0]; if(!f) return;
+  photoFiles[e.target._slot]=f; renderPhotoGrid(); e.target.value='';
+});
+
+async function saveOnboarding(){
+  const err=$('ob-error'); err.textContent='';
+  const name=$('ob-name').value.trim(), dob=$('ob-dob').value,
+        gender=$('ob-gender').value, interest=$('ob-interest').value,
+        bio=$('ob-bio').value.trim();
+  const photos = photoFiles.filter(Boolean);
+  if(!name||!dob||!gender||!interest){ err.textContent='Please fill in every field.'; return; }
+  if(ageOf(dob)<18){ err.textContent='Stunner is strictly 18+.'; return; }
+  if(!photos.length){ err.textContent='Add at least one photo.'; return; }
+  $('ob-btn').disabled=true; $('ob-btn').textContent='Saving…';
+  try{
+    const urls=[];
+    for(const p of photos){
+      if(typeof p==='string'){ urls.push(p); continue; }
+      const blob = await compress(p);
+      const path = `${session.user.id}/${Date.now()}-${Math.random().toString(36).slice(2,8)}.jpg`;
+      const { error } = await db.storage.from('photos').upload(path, blob, {contentType:'image/jpeg'});
+      if(error) throw error;
+      urls.push(db.storage.from('photos').getPublicUrl(path).data.publicUrl);
+    }
+    const row = { id:session.user.id, name, dob, gender, interested_in:interest, bio, photos:urls, city:'Delhi' };
+    const { error } = await db.from('profiles').upsert(row);
+    if(error) throw error;
+    const { data } = await db.from('profiles').select('*').eq('id',session.user.id).single();
+    me=data;
+    await prepVerify(); show('screen-verify');
+  }catch(ex){ err.textContent = ex.message||'Something went wrong. Try again.'; }
+  $('ob-btn').disabled=false; $('ob-btn').textContent='Continue to verification';
+}
+
+/* ---------- verification ---------- */
+async function prepVerify(){
+  if(!me.verification_code){
+    const code = Math.random().toString(36).replace(/[^a-z0-9]/g,'').slice(0,4).toUpperCase();
+    await db.from('profiles').update({verification_code:code}).eq('id',me.id);
+    me.verification_code=code;
+  }
+  $('verify-code').textContent = me.verification_code;
+}
+$('selfie-input').addEventListener('change', e=>{
+  const f=e.target.files[0]; if(!f) return;
+  selfieFile=f;
+  $('selfie-slot').innerHTML=`<img src="${URL.createObjectURL(f)}" alt="Your verification selfie">`;
+});
+async function submitVerification(){
+  const err=$('verify-error'); err.textContent='';
+  if(!selfieFile){ err.textContent='Take a selfie holding your code first.'; return; }
+  $('verify-btn').disabled=true; $('verify-btn').textContent='Uploading…';
+  try{
+    const blob = await compress(selfieFile);
+    const path = `${session.user.id}/selfie-${Date.now()}.jpg`;
+    const { error: upErr } = await db.storage.from('verification').upload(path, blob, {contentType:'image/jpeg'});
+    if(upErr) throw upErr;
+    const { error } = await db.from('profiles').update({verification_selfie:path, status:'pending'}).eq('id',me.id);
+    if(error) throw error;
+    me.status='pending';
+    show('screen-pending');
+  }catch(ex){ err.textContent = ex.message||'Upload failed. Try again.'; }
+  $('verify-btn').disabled=false; $('verify-btn').textContent='Submit for review';
+}
+
+/* ---------- main app ---------- */
+function switchTab(tab){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+  document.querySelectorAll('#screen-app .panel').forEach(p=>p.classList.remove('active'));
+  $('panel-'+tab).classList.add('active');
+  if(tab==='matches') loadMatches();
+  if(tab==='me') renderMe();
+}
+async function enterApp(){ renderMe(); await loadFeed(); }
+
+async function loadFeed(){
+  const { data, error } = await db.rpc('get_feed', {limit_n:20});
+  if(error){ toast('Could not load profiles: '+error.message); return; }
+  deckCards = data||[];
+  nextCard();
+}
+function nextCard(){
+  currentCard = deckCards.shift() || null;
+  const deck=$('deck');
+  if(!currentCard){
+    $('deck-actions').style.display='none';
+    deck.innerHTML=`<div class="empty"><h3>That's everyone for now</h3><p>Delhi is filling up — new verified profiles land here every day.</p><button class="btn ghost" style="margin-top:14px" onclick="loadFeed()">Refresh</button></div>`;
+    return;
+  }
+  const p=currentCard, photo=(p.photos||[])[0];
+  deck.innerHTML=`
+    <div class="pcard">
+      <div class="ph">
+        ${photo?`<img src="${esc(photo)}" alt="Photo of ${esc(p.name)}">`:''}
+        <div class="stamp sm"><span class="s-main">STUNNER</span><span class="s-check">✓</span></div>
+        <button class="more" onclick="openProfileMenu('${p.id}')" aria-label="Options">⋯</button>
+      </div>
+      <div class="info">
+        <h3>${esc(p.name)}, ${ageOf(p.dob)}</h3>
+        <div class="meta">${esc(p.city)}</div>
+        <div class="bio">${esc(p.bio||'')}</div>
+      </div>
+    </div>`;
+  $('deck-actions').style.display='flex';
+}
+async function swipe(liked){
+  if(!currentCard) return;
+  const target=currentCard;
+  const { error } = await db.from('swipes').insert({swiper:me.id, target:target.id, liked});
+  if(error && !error.message.includes('duplicate')){ toast(error.message); return; }
+  if(liked){
+    const [a,b] = me.id<target.id ? [me.id,target.id] : [target.id,me.id];
+    const { data } = await db.from('matches').select('*').eq('user_a',a).eq('user_b',b).maybeSingle();
+    if(data){
+      lastNewMatch = { match:data, other:target };
+      $('match-pop-name').textContent = `You and ${target.name} liked each other.`;
+      $('match-pop').classList.add('open');
+    }
+  }
+  nextCard();
+}
+function closeMatchPop(openChatNow){
+  $('match-pop').classList.remove('open');
+  if(openChatNow && lastNewMatch){
+    myMatches.unshift(lastNewMatch);
+    switchTab('matches');
+    openChat(lastNewMatch.match.id, lastNewMatch.other);
+  }
+  lastNewMatch=null;
+}
+
+/* ---------- matches & chat ---------- */
+async function loadMatches(){
+  const list=$('matches-list');
+  const { data: ms, error } = await db.from('matches').select('*')
+    .or(`user_a.eq.${me.id},user_b.eq.${me.id}`).order('created_at',{ascending:false});
+  if(error){ list.innerHTML=`<div class="empty">${esc(error.message)}</div>`; return; }
+  if(!ms.length){ list.innerHTML=`<div class="empty"><h3>No matches yet</h3><p>Keep liking — when it's mutual, they show up here.</p></div>`; return; }
+  const otherIds = ms.map(m=> m.user_a===me.id ? m.user_b : m.user_a);
+  const { data: profs } = await db.from('profiles').select('id,name,photos,dob').in('id', otherIds);
+  const pmap = Object.fromEntries((profs||[]).map(p=>[p.id,p]));
+  myMatches = ms.map(m=>({match:m, other:pmap[m.user_a===me.id?m.user_b:m.user_a]||null}));
+  list.innerHTML='';
+  myMatches.forEach(({match,other})=>{
+    const row=document.createElement('button'); row.className='match-row';
+    if(!other){
+      row.innerHTML=`<div class="avatar-fallback">?</div><div><b>Account unavailable</b><span>This person is no longer on Stunner.</span></div>`;
+      row.disabled=true;
+    } else {
+      const ph=(other.photos||[])[0];
+      row.innerHTML=`${ph?`<img src="${esc(ph)}" alt="">`:`<div class="avatar-fallback">${esc(other.name[0]||'?')}</div>`}<div><b>${esc(other.name)}</b><span>Say something nice →</span></div>`;
+      row.onclick=()=>openChat(match.id, other);
+    }
+    list.appendChild(row);
+  });
+}
+async function openChat(matchId, other){
+  currentChat.matchId=matchId; currentChat.otherId=other.id;
+  $('chat-name').textContent=other.name;
+  const ph=(other.photos||[])[0];
+  $('chat-avatar').src=ph||''; $('chat-avatar').style.display=ph?'block':'none';
+  $('msgs').innerHTML='';
+  $('panel-chat').classList.add('active');
+  const { data } = await db.from('messages').select('*').eq('match_id',matchId).order('created_at');
+  (data||[]).forEach(renderMsg);
+  scrollMsgs();
+  if(currentChat.channel) db.removeChannel(currentChat.channel);
+  currentChat.channel = db.channel('msg-'+matchId)
+    .on('postgres_changes', {event:'INSERT', schema:'public', table:'messages', filter:`match_id=eq.${matchId}`},
+        payload=>{ if(payload.new.sender!==me.id){ renderMsg(payload.new); scrollMsgs(); } })
+    .subscribe();
+}
+function closeChat(){
+  $('panel-chat').classList.remove('active');
+  if(currentChat.channel){ db.removeChannel(currentChat.channel); currentChat.channel=null; }
+  currentChat.matchId=null; currentChat.otherId=null;
+}
+function renderMsg(m){
+  const el=document.createElement('div');
+  el.className='msg '+(m.sender===me.id?'me':'them');
+  el.textContent=m.body;
+  $('msgs').appendChild(el);
+}
+function scrollMsgs(){ const el=$('msgs'); el.scrollTop=el.scrollHeight; }
+async function sendMsg(){
+  const input=$('msg-input'), body=input.value.trim();
+  if(!body||!currentChat.matchId) return;
+  input.value='';
+  const { error } = await db.from('messages').insert({match_id:currentChat.matchId, sender:me.id, body});
+  if(error){ toast("Couldn't send: "+error.message); input.value=body; return; }
+  renderMsg({sender:me.id, body}); scrollMsgs();
+}
+
+/* ---------- report & block ---------- */
+let menuTargetId=null;
+function openProfileMenu(userId){ menuTargetId=userId; $('menu-modal').classList.add('open'); }
+function openReport(){ closeModal('menu-modal'); $('report-modal').classList.add('open'); }
+async function submitReport(){
+  const reason=$('report-reason').value, details=$('report-details').value.trim();
+  const { error } = await db.from('reports').insert({reporter:me.id, reported:menuTargetId, reason, details});
+  closeModal('report-modal'); $('report-details').value='';
+  toast(error ? 'Report failed: '+error.message : 'Report submitted. Thank you — a human will review it.');
+}
+async function doBlock(){
+  closeModal('menu-modal');
+  const { error } = await db.from('blocks').insert({blocker:me.id, blocked:menuTargetId});
+  if(error && !error.message.includes('duplicate')){ toast('Block failed: '+error.message); return; }
+  toast('Blocked. You will never see each other again.');
+  if(currentChat.otherId===menuTargetId) closeChat();
+  if(currentCard && currentCard.id===menuTargetId) nextCard();
+  loadMatches();
+}
+
+/* ---------- me panel ---------- */
+function renderMe(){
+  if(!me) return;
+  const ph=(me.photos||[])[0];
+  $('me-card').innerHTML=`
+    <div class="row">
+      ${ph?`<img src="${esc(ph)}" alt="Your photo">`:`<div class="avatar-fallback">${esc((me.name||'?')[0])}</div>`}
+      <div><b style="font-size:1.15rem">${esc(me.name)}, ${ageOf(me.dob)}</b><br><span class="tag">✓ Verified · ${esc(me.city)}</span></div>
+    </div>
+    <p style="font-size:.92rem;color:var(--ink-soft)">${esc(me.bio||'')}</p>`;
+}
+
+/* ---------- legal ---------- */
+const LEGAL = {
+  terms: { t:'Terms of use', b:`<p><b>1. Eligibility.</b> Stunner is for people 18 and older. By creating an account you confirm you are at least 18.</p>
+<p><b>2. Verification.</b> Profiles must pass human verification before appearing to others. Submitting someone else's photos is grounds for a permanent ban.</p>
+<p><b>3. Conduct.</b> No harassment, hate speech, nudity, offensive content, spam, or solicitation. Violations may result in immediate suspension without refund or notice.</p>
+<p><b>4. Content.</b> You own your photos and messages. You grant Stunner a licence to display them to other users as part of the service.</p>
+<p><b>5. Safety.</b> Stunner verifies profiles but cannot guarantee anyone's conduct. Meet in public places and tell someone where you're going.</p>
+<p><b>6. Termination.</b> You may delete your account at any time. We may suspend accounts that violate these terms.</p>` },
+  privacy: { t:'Privacy policy', b:`<p><b>What we collect.</b> Your email, profile details, photos, verification selfie, likes, matches, messages, and reports you file.</p>
+<p><b>How it's used.</b> Solely to run Stunner: showing your profile to compatible verified users, delivering messages, and reviewing verification and reports. We do not sell your data or show ads.</p>
+<p><b>Verification selfies</b> are visible only to the review team and never shown on your profile.</p>
+<p><b>Storage.</b> Data is stored with Supabase. Deleting your account removes your profile, photos, matches, and messages.</p>
+<p><b>Contact.</b> support@stunner.dating for questions or data deletion requests.</p>` }
+};
+function openLegal(kind){
+  $('legal-title').textContent=LEGAL[kind].t;
+  $('legal-body').innerHTML=LEGAL[kind].b;
+  $('legal-modal').classList.add('open');
+}
+
+/* ---------- boot ---------- */
+if(SUPABASE_URL.startsWith('YOUR_')){
+  document.addEventListener('DOMContentLoaded',()=>toast('Setup needed: add your Supabase URL and key at the top of the script.'));
+} else {
+  route();
+}
+</script>
+</body>
+</html>

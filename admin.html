@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stunner — Admin</title>
+<meta name="robots" content="noindex,nofollow">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#FFF9F3;--ink:#26191F;--soft:#6E5F66;--rani:#D6336C;--peacock:#0E6B63;--line:#EADFD4;--danger:#C0392B;--ok:#1D7A4F}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Instrument Sans',sans-serif;background:var(--paper);color:var(--ink);line-height:1.5}
+h1,h2,h3{font-family:'Bricolage Grotesque',sans-serif}
+button{font:inherit;cursor:pointer;border:none}
+input,select{font:inherit;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px}
+.wrap{max-width:860px;margin:0 auto;padding:24px 18px}
+.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.logo{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:1.3rem}
+.logo em{font-style:normal;color:var(--rani)}
+.tabs{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.tab{padding:9px 18px;border-radius:999px;background:#fff;border:1.5px solid var(--line);font-weight:600}
+.tab.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+.tab .badge{background:var(--rani);color:#fff;border-radius:999px;padding:1px 8px;font-size:.75rem;margin-left:6px}
+.card{background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:18px;margin-bottom:14px}
+.btn{padding:10px 20px;border-radius:999px;font-weight:600;color:#fff}
+.btn.ok{background:var(--ok)}.btn.bad{background:var(--danger)}.btn.mid{background:var(--soft)}.btn.pri{background:var(--rani)}
+.btn:disabled{opacity:.5}
+.imgs{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+.imgs figure{margin:0}
+.imgs img{width:130px;height:172px;object-fit:cover;border-radius:10px;border:1.5px solid var(--line)}
+.imgs figcaption{font-size:.72rem;color:var(--soft);text-align:center;margin-top:3px}
+.imgs .selfie img{border:3px solid var(--peacock)}
+.meta{font-size:.86rem;color:var(--soft)}
+.code{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;color:var(--peacock);font-size:1.15rem;letter-spacing:.2em}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.empty{color:var(--soft);padding:30px;text-align:center}
+.pill{display:inline-block;font-size:.72rem;font-weight:700;padding:2px 10px;border-radius:999px;text-transform:uppercase;letter-spacing:.05em}
+.pill.verified{background:#E4F3EC;color:var(--ok)}.pill.pending{background:#FDF0DC;color:#9A6A12}
+.pill.banned{background:#FBE4E1;color:var(--danger)}.pill.onboarding{background:#EEE;color:var(--soft)}
+#login{max-width:380px;margin:80px auto;display:flex;flex-direction:column;gap:12px}
+#login input{width:100%}
+.err{color:var(--danger);font-size:.88rem;min-height:1.2em}
+.reason{font-weight:700;color:var(--danger);text-transform:capitalize}
+</style>
+</head>
+<body>
+
+<div id="login">
+  <h2>Stunner admin</h2>
+  <input id="l-email" type="email" placeholder="Admin email" autocomplete="email">
+  <input id="l-pass" type="password" placeholder="Password" autocomplete="current-password">
+  <div class="err" id="l-err"></div>
+  <button class="btn pri" onclick="login()">Log in</button>
+</div>
+
+<div class="wrap" id="panel" style="display:none">
+  <div class="top">
+    <div class="logo">stunner<em>.</em> admin</div>
+    <button class="btn mid" onclick="logout()">Log out</button>
+  </div>
+  <div class="tabs">
+    <button class="tab active" id="tab-verify" onclick="switchTab('verify')">Verification queue <span class="badge" id="n-verify">0</span></button>
+    <button class="tab" id="tab-reports" onclick="switchTab('reports')">Reports <span class="badge" id="n-reports">0</span></button>
+    <button class="tab" id="tab-users" onclick="switchTab('users')">Users</button>
+  </div>
+  <div id="view"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+/* ============ CONFIG — same values as index.html ============ */
+const SUPABASE_URL = "https://dskrgmsyucnqnlideiit.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_s5uEsKXzrtm8sLz1uiSIJw_Z8h41_YZ";
+/* ============================================================ */
+
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const $ = id => document.getElementById(id);
+let tab='verify';
+const esc = s => { const d=document.createElement('div'); d.textContent=s??''; return d.innerHTML; };
+
+async function login(){
+  $('l-err').textContent='';
+  const { error } = await db.auth.signInWithPassword({email:$('l-email').value.trim(), password:$('l-pass').value});
+  if(error){ $('l-err').textContent=error.message; return; }
+  boot();
+}
+async function logout(){ await db.auth.signOut(); location.reload(); }
+
+async function boot(){
+  const { data:{ session } } = await db.auth.getSession();
+  if(!session) return;
+  // is this user an admin? (RLS: only admins can read admin_users)
+  const { data } = await db.from('admin_users').select('user_id').eq('user_id', session.user.id);
+  if(!data || !data.length){ $('l-err').textContent='This account is not an admin.'; await db.auth.signOut(); return; }
+  $('login').style.display='none'; $('panel').style.display='block';
+  refreshCounts(); render();
+}
+
+async function refreshCounts(){
+  const { count: v } = await db.from('profiles').select('id',{count:'exact',head:true}).eq('status','pending');
+  const { count: r } = await db.from('reports').select('id',{count:'exact',head:true}).eq('status','open');
+  $('n-verify').textContent = v ?? 0;
+  $('n-reports').textContent = r ?? 0;
+}
+function switchTab(t){
+  tab=t;
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  $('tab-'+t).classList.add('active');
+  render();
+}
+function render(){ ({verify:renderVerify, reports:renderReports, users:renderUsers})[tab](); }
+
+/* ---------- verification queue ---------- */
+async function renderVerify(){
+  const view=$('view'); view.innerHTML='Loading…';
+  const { data, error } = await db.from('profiles').select('*').eq('status','pending').order('created_at');
+  if(error){ view.innerHTML=`<div class="empty">${esc(error.message)}</div>`; return; }
+  if(!data.length){ view.innerHTML='<div class="empty">Queue is empty. Nothing to review 🎉</div>'; return; }
+  view.innerHTML='';
+  for(const p of data){
+    let selfieUrl='';
+    if(p.verification_selfie){
+      const { data:s } = await db.storage.from('verification').createSignedUrl(p.verification_selfie, 3600);
+      selfieUrl = s?.signedUrl || '';
+    }
+    const card=document.createElement('div'); card.className='card';
+    card.innerHTML=`
+      <h3>${esc(p.name)} <span class="meta">· ${esc(p.gender)} · ${esc(p.city)} · joined ${new Date(p.created_at).toLocaleDateString()}</span></h3>
+      <p class="meta">Expected code: <span class="code">${esc(p.verification_code||'—')}</span> — check the selfie shows this code handwritten.</p>
+      <div class="imgs">
+        ${selfieUrl?`<figure class="selfie"><img src="${selfieUrl}" alt="Verification selfie"><figcaption>Verification selfie</figcaption></figure>`:'<p class="meta">No selfie submitted.</p>'}
+        ${(p.photos||[]).map((u,i)=>`<figure><img src="${esc(u)}" alt="Profile photo ${i+1}"><figcaption>Profile photo ${i+1}</figcaption></figure>`).join('')}
+      </div>
+      <p class="meta">Bio: ${esc(p.bio||'—')}</p>
+      <div class="row">
+        <button class="btn ok" onclick="setStatus('${p.id}','verified',this)">✓ Approve</button>
+        <button class="btn mid" onclick="setStatus('${p.id}','onboarding',this)">↩ Reject (redo verification)</button>
+        <button class="btn bad" onclick="setStatus('${p.id}','banned',this)">⛔ Ban</button>
+      </div>`;
+    view.appendChild(card);
+  }
+}
+
+/* ---------- reports ---------- */
+async function renderReports(){
+  const view=$('view'); view.innerHTML='Loading…';
+  const { data, error } = await db.from('reports').select('*').eq('status','open').order('created_at');
+  if(error){ view.innerHTML=`<div class="empty">${esc(error.message)}</div>`; return; }
+  if(!data.length){ view.innerHTML='<div class="empty">No open reports 🎉</div>'; return; }
+  const ids=[...new Set(data.flatMap(r=>[r.reporter,r.reported]))];
+  const { data:profs } = await db.from('profiles').select('id,name,photos,status,bio').in('id',ids);
+  const pm=Object.fromEntries((profs||[]).map(p=>[p.id,p]));
+  view.innerHTML='';
+  data.forEach(r=>{
+    const rep=pm[r.reported], by=pm[r.reporter];
+    const card=document.createElement('div'); card.className='card';
+    card.innerHTML=`
+      <h3>${esc(rep?.name||'Unknown')} <span class="pill ${rep?.status||'onboarding'}">${esc(rep?.status||'?')}</span></h3>
+      <p class="meta">Reported by ${esc(by?.name||'Unknown')} · ${new Date(r.created_at).toLocaleString()}</p>
+      <p><span class="reason">${esc(r.reason.replace(/_/g,' '))}</span>${r.details?` — ${esc(r.details)}`:''}</p>
+      <div class="imgs">${(rep?.photos||[]).slice(0,4).map(u=>`<figure><img src="${esc(u)}" alt="Reported user's photo"></figure>`).join('')}</div>
+      <p class="meta">Bio: ${esc(rep?.bio||'—')}</p>
+      <div class="row">
+        <button class="btn bad" onclick="banAndResolve('${r.id}','${r.reported}',this)">⛔ Ban user</button>
+        <button class="btn mid" onclick="resolveReport('${r.id}','dismissed',this)">Dismiss report</button>
+      </div>`;
+    view.appendChild(card);
+  });
+}
+async function banAndResolve(reportId, userId, btn){
+  btn.disabled=true;
+  await db.from('profiles').update({status:'banned'}).eq('id',userId);
+  await db.from('reports').update({status:'resolved'}).eq('id',reportId);
+  // resolve any other open reports against the same user
+  await db.from('reports').update({status:'resolved'}).eq('reported',userId).eq('status','open');
+  refreshCounts(); render();
+}
+async function resolveReport(id, status, btn){
+  btn.disabled=true;
+  await db.from('reports').update({status}).eq('id',id);
+  refreshCounts(); render();
+}
+
+/* ---------- users ---------- */
+async function renderUsers(){
+  const view=$('view');
+  view.innerHTML=`
+    <div class="card" style="display:flex;gap:10px;flex-wrap:wrap">
+      <input id="u-q" placeholder="Search by name…" style="flex:1;min-width:200px">
+      <select id="u-status"><option value="">Any status</option><option>verified</option><option>pending</option><option>banned</option><option>onboarding</option></select>
+      <button class="btn pri" onclick="searchUsers()">Search</button>
+    </div>
+    <div id="u-results"></div>`;
+  searchUsers();
+}
+async function searchUsers(){
+  const q=$('u-q')?.value.trim()||'', st=$('u-status')?.value||'';
+  let query=db.from('profiles').select('*').order('created_at',{ascending:false}).limit(30);
+  if(q) query=query.ilike('name',`%${q}%`);
+  if(st) query=query.eq('status',st);
+  const { data, error } = await query;
+  const res=$('u-results');
+  if(error){ res.innerHTML=`<div class="empty">${esc(error.message)}</div>`; return; }
+  if(!data.length){ res.innerHTML='<div class="empty">No users found.</div>'; return; }
+  res.innerHTML='';
+  data.forEach(p=>{
+    const card=document.createElement('div'); card.className='card';
+    card.innerHTML=`
+      <h3>${esc(p.name||'(no name)')} <span class="pill ${p.status}">${p.status}</span></h3>
+      <p class="meta">${esc(p.gender||'—')} · ${esc(p.city)} · joined ${new Date(p.created_at).toLocaleDateString()}</p>
+      <div class="imgs">${(p.photos||[]).slice(0,3).map(u=>`<figure><img src="${esc(u)}" alt=""></figure>`).join('')}</div>
+      <div class="row">
+        ${p.status!=='banned'?`<button class="btn bad" onclick="setStatus('${p.id}','banned',this)">⛔ Ban</button>`:''}
+        ${p.status==='banned'?`<button class="btn ok" onclick="setStatus('${p.id}','verified',this)">Unban (re-verify)</button>`:''}
+        ${p.status==='verified'?`<button class="btn mid" onclick="setStatus('${p.id}','pending',this)">Hide (send to review)</button>`:''}
+      </div>`;
+    res.appendChild(card);
+  });
+}
+async function setStatus(id, status, btn){
+  if(status==='banned' && !confirm('Ban this account? They will be locked out immediately.')) return;
+  if(btn) btn.disabled=true;
+  const { error } = await db.from('profiles').update({status}).eq('id',id);
+  if(error) alert(error.message);
+  refreshCounts(); render();
+}
+
+/* boot on load if already logged in */
+if(!SUPABASE_URL.startsWith('YOUR_')) boot();
+</script>
+</body>
+</html>
