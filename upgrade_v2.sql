@@ -1,0 +1,85 @@
+-- Stunner capability upgrade for an existing Supabase project.
+-- Run once in Supabase SQL Editor after the original schema.sql.
+
+alter table public.profiles
+  add column if not exists dating_intention text not null default 'figuring_out',
+  add column if not exists interests jsonb not null default '[]',
+  add column if not exists prompt_key text,
+  add column if not exists prompt_answer text,
+  add column if not exists job_title text,
+  add column if not exists education text,
+  add column if not exists opening_move text,
+  add column if not exists is_test boolean not null default false;
+
+do $$ begin
+  alter table public.profiles add constraint profiles_dating_intention_check
+    check (dating_intention in ('relationship','casual','figuring_out','friendship'));
+exception when duplicate_object then null;
+end $$;
+
+do $$ begin
+  alter table public.profiles add constraint profiles_job_title_length_check check (char_length(job_title) <= 80);
+exception when duplicate_object then null;
+end $$;
+
+do $$ begin
+  alter table public.profiles add constraint profiles_education_length_check check (char_length(education) <= 100);
+exception when duplicate_object then null;
+end $$;
+
+do $$ begin
+  alter table public.profiles add constraint profiles_opening_move_length_check check (char_length(opening_move) <= 160);
+exception when duplicate_object then null;
+end $$;
+
+do $$ begin
+  alter table public.profiles add constraint profiles_interests_array_check
+    check (jsonb_typeof(interests) = 'array');
+exception when duplicate_object then null;
+end $$;
+
+do $$ begin
+  alter table public.profiles add constraint profiles_prompt_answer_length_check
+    check (char_length(prompt_answer) <= 240);
+exception when duplicate_object then null;
+end $$;
+
+drop policy if exists "insert own" on public.profiles;
+drop policy if exists "insert own onboarding profile" on public.profiles;
+create policy "insert own onboarding profile" on public.profiles
+  for insert with check (id = auth.uid() and status = 'onboarding');
+
+drop function if exists public.get_feed(int);
+drop function if exists public.get_feed(int, int, int, text);
+create or replace function public.get_feed(
+  limit_n int default 20,
+  min_age int default 18,
+  max_age int default 80,
+  intention_filter text default null,
+  include_test boolean default false
+)
+returns setof public.profiles
+language sql stable security definer set search_path = public as $$
+  select p.*
+  from profiles p
+  join profiles me on me.id = auth.uid()
+  where me.status = 'verified'
+    and p.status = 'verified'
+    and p.id <> me.id
+    and (not p.is_test or (include_test and is_admin()))
+    and p.city = me.city
+    and extract(year from age(current_date, p.dob)) between min_age and max_age
+    and (intention_filter is null or p.dating_intention = intention_filter)
+    and (me.interested_in = 'everyone'
+      or (me.interested_in = 'men' and p.gender = 'man')
+      or (me.interested_in = 'women' and p.gender = 'woman'))
+    and (p.interested_in = 'everyone'
+      or (p.interested_in = 'men' and me.gender = 'man')
+      or (p.interested_in = 'women' and me.gender = 'woman'))
+    and not exists (select 1 from swipes s where s.swiper = me.id and s.target = p.id)
+    and not exists (select 1 from blocks b
+      where (b.blocker = me.id and b.blocked = p.id)
+         or (b.blocker = p.id and b.blocked = me.id))
+  order by random()
+  limit limit_n;
+$$;

@@ -12,6 +12,15 @@ create table public.profiles (
   interested_in text check (interested_in in ('men','women','everyone')),
   city text not null default 'Delhi',
   bio text check (char_length(bio) <= 500),
+  job_title text check (char_length(job_title) <= 80),
+  education text check (char_length(education) <= 100),
+  dating_intention text not null default 'figuring_out'
+    check (dating_intention in ('relationship','casual','figuring_out','friendship')),
+  interests jsonb not null default '[]' check (jsonb_typeof(interests) = 'array'),
+  prompt_key text,
+  prompt_answer text check (char_length(prompt_answer) <= 240),
+  opening_move text check (char_length(opening_move) <= 160),
+  is_test boolean not null default false,
   photos jsonb not null default '[]',
   status text not null default 'onboarding'
     check (status in ('onboarding','pending','verified','banned')),
@@ -135,7 +144,13 @@ before update on public.profiles
 for each row execute function public.protect_profile_status();
 
 -- ---------- FEED ----------
-create or replace function public.get_feed(limit_n int default 20)
+create or replace function public.get_feed(
+  limit_n int default 20,
+  min_age int default 18,
+  max_age int default 80,
+  intention_filter text default null,
+  include_test boolean default false
+)
 returns setof public.profiles
 language sql stable security definer set search_path = public as $$
   select p.*
@@ -144,7 +159,10 @@ language sql stable security definer set search_path = public as $$
   where me.status = 'verified'
     and p.status = 'verified'
     and p.id <> me.id
+    and (not p.is_test or (include_test and is_admin()))
     and p.city = me.city
+    and extract(year from age(current_date, p.dob)) between min_age and max_age
+    and (intention_filter is null or p.dating_intention = intention_filter)
     and (me.interested_in = 'everyone'
       or (me.interested_in = 'men'   and p.gender = 'man')
       or (me.interested_in = 'women' and p.gender = 'woman'))
@@ -172,8 +190,8 @@ alter table public.reports     enable row level security;
 -- profiles
 create policy "read own, verified, or admin" on public.profiles
   for select using (id = auth.uid() or status = 'verified' or is_admin());
-create policy "insert own" on public.profiles
-  for insert with check (id = auth.uid());
+create policy "insert own onboarding profile" on public.profiles
+  for insert with check (id = auth.uid() and status = 'onboarding');
 create policy "update own or admin" on public.profiles
   for update using (id = auth.uid() or is_admin());
 

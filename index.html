@@ -64,6 +64,12 @@ a{color:var(--peacock)}
 .hint{font-size:.82rem;color:var(--ink-soft);margin-top:5px}
 .error-msg{color:var(--danger);font-size:.88rem;margin:10px 0;min-height:1.2em}
 .tag{display:inline-block;font-size:.75rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--peacock)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.chip{display:inline-flex;align-items:center;padding:7px 11px;border-radius:999px;background:#F8EFE7;color:var(--ink);font-size:.82rem;font-weight:600}
+.prompt-card{margin-top:14px;padding:14px;border-radius:14px;background:#FFF9F3;border:1px solid var(--line)}
+.prompt-card small{display:block;color:var(--peacock);font-weight:700;margin-bottom:4px}
+.discover-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.filter-btn{width:auto;padding:9px 14px;font-size:.88rem}
 
 /* ---------- the STUNNER stamp (signature element) ---------- */
 .stamp{
@@ -150,6 +156,11 @@ a{color:var(--peacock)}
 }
 .pcard .ph{position:relative;aspect-ratio:3/4;background:var(--line)}
 .pcard .ph img{width:100%;height:100%;object-fit:cover}
+.photo-nav{position:absolute;inset:0;display:flex;justify-content:space-between;pointer-events:none}
+.photo-nav button{width:32%;pointer-events:auto;color:transparent}
+.photo-dots{position:absolute;top:9px;left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:3}
+.photo-dot{width:22px;height:3px;border-radius:9px;background:rgba(255,255,255,.45);box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.photo-dot.active{background:#fff}
 .pcard .ph .stamp.sm{position:absolute;top:12px;right:12px;background:rgba(255,255,255,.92)}
 .pcard .info{padding:16px 18px 18px}
 .pcard .info h3{font-size:1.45rem;letter-spacing:-.02em}
@@ -277,6 +288,17 @@ a{color:var(--peacock)}
       <select id="ob-interest"><option value="">Select…</option><option value="men">Men</option><option value="women">Women</option><option value="everyone">Everyone</option></select>
     </div>
     <div class="field"><label for="ob-bio">About you</label><textarea id="ob-bio" rows="3" maxlength="500" placeholder="What should a match know about you?"></textarea></div>
+    <div class="field"><label for="ob-job">Work</label><input id="ob-job" maxlength="80" placeholder="Product designer at Acme"></div>
+    <div class="field"><label for="ob-education">Education</label><input id="ob-education" maxlength="100" placeholder="Delhi University"></div>
+    <div class="field"><label for="ob-intention">What are you looking for?</label>
+      <select id="ob-intention"><option value="relationship">A relationship</option><option value="casual">Something casual</option><option value="figuring_out">Still figuring it out</option><option value="friendship">New friends</option></select>
+    </div>
+    <div class="field"><label for="ob-interests">Interests</label><input id="ob-interests" maxlength="160" placeholder="Travel, chai, live music (up to 5)"><div class="hint">Separate interests with commas.</div></div>
+    <div class="field"><label for="ob-prompt">Profile prompt</label>
+      <select id="ob-prompt"><option value="perfect_sunday">My perfect Sunday…</option><option value="known_for">I'm known for…</option><option value="green_flag">A green flag I look for…</option><option value="first_date">My ideal first date…</option></select>
+    </div>
+    <div class="field"><label for="ob-prompt-answer">Your answer</label><textarea id="ob-prompt-answer" rows="2" maxlength="240" placeholder="Give someone an easy way to start a conversation"></textarea></div>
+    <div class="field"><label for="ob-opening-move">Your opening move</label><input id="ob-opening-move" maxlength="160" placeholder="What's your most underrated Delhi food spot?"><div class="hint">Matches can answer this to start a meaningful chat.</div></div>
     <div class="field">
       <label>Photos (1–4, first one is your main photo)</label>
       <div class="photo-grid" id="photo-grid"></div>
@@ -333,6 +355,7 @@ a{color:var(--peacock)}
 
     <!-- Discover -->
     <div class="panel active" id="panel-discover">
+      <div class="discover-head"><div><span class="tag">People near you</span><h2>Discover</h2></div><button class="btn ghost filter-btn" onclick="openFilters()">⚙ Filters</button></div>
       <div class="deck" id="deck"></div>
       <div class="actions" id="deck-actions" style="display:none">
         <button class="act pass" onclick="swipe(false)" aria-label="Pass">✕</button>
@@ -350,6 +373,7 @@ a{color:var(--peacock)}
     <div class="panel" id="panel-me">
       <h2 style="margin-bottom:14px">You</h2>
       <div class="me-card" id="me-card"></div>
+      <button class="btn" style="margin-bottom:10px" onclick="openEditProfile()">Edit profile</button>
       <button class="btn ghost" style="margin-bottom:10px" onclick="openLegal('privacy')">Privacy policy</button>
       <button class="btn ghost" style="margin-bottom:10px" onclick="openLegal('terms')">Terms of use</button>
       <button class="btn ghost" onclick="logout()">Log out</button>
@@ -375,6 +399,35 @@ a{color:var(--peacock)}
   <div class="chat-input">
     <input id="msg-input" placeholder="Message…" maxlength="2000" onkeydown="if(event.key==='Enter')sendMsg()">
     <button onclick="sendMsg()" aria-label="Send">➤</button>
+  </div>
+</div>
+
+<!-- ============ EDIT PROFILE ============ -->
+<div class="modal-back" id="edit-profile-modal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal">
+    <h3>Edit your profile</h3>
+    <div class="field"><label for="edit-bio">About you</label><textarea id="edit-bio" rows="3" maxlength="500"></textarea></div>
+    <div class="field"><label for="edit-job">Work</label><input id="edit-job" maxlength="80"></div>
+    <div class="field"><label for="edit-education">Education</label><input id="edit-education" maxlength="100"></div>
+    <div class="field"><label for="edit-intention">What are you looking for?</label><select id="edit-intention"><option value="relationship">A relationship</option><option value="casual">Something casual</option><option value="figuring_out">Still figuring it out</option><option value="friendship">New friends</option></select></div>
+    <div class="field"><label for="edit-interests">Interests</label><input id="edit-interests" maxlength="160"><div class="hint">Up to five, separated with commas.</div></div>
+    <div class="field"><label for="edit-prompt-answer">Profile prompt answer</label><textarea id="edit-prompt-answer" rows="2" maxlength="240"></textarea></div>
+    <div class="field"><label for="edit-opening-move">Opening move</label><input id="edit-opening-move" maxlength="160"></div>
+    <div class="error-msg" id="edit-error"></div>
+    <button class="btn" id="edit-save" onclick="saveProfileEdits()">Save changes</button>
+    <button class="opt" style="margin-top:8px" onclick="closeModal('edit-profile-modal')">Cancel</button>
+  </div>
+</div>
+
+<!-- ============ DISCOVERY FILTERS ============ -->
+<div class="modal-back" id="filters-modal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal">
+    <h3>Your preferences</h3>
+    <div class="field"><label for="filter-min-age">Minimum age</label><input id="filter-min-age" type="number" min="18" max="80" value="18"></div>
+    <div class="field"><label for="filter-max-age">Maximum age</label><input id="filter-max-age" type="number" min="18" max="80" value="45"></div>
+    <div class="field"><label for="filter-intention">Dating intention</label><select id="filter-intention"><option value="">Any intention</option><option value="relationship">A relationship</option><option value="casual">Something casual</option><option value="figuring_out">Still figuring it out</option><option value="friendship">New friends</option></select></div>
+    <button class="btn" onclick="applyFilters()">Show compatible people</button>
+    <button class="opt" style="margin-top:8px" onclick="closeModal('filters-modal')">Cancel</button>
   </div>
 </div>
 
@@ -444,6 +497,11 @@ let currentChat = { matchId: null, otherId: null, channel: null };
 let lastNewMatch = null;
 let photoFiles = [null, null, null, null]; // local files or existing URLs
 let selfieFile = null;
+let currentPhotoIndex = 0;
+let discoverFilters = {minAge:18, maxAge:45, intention:''};
+const demoMode = new URLSearchParams(location.search).get('demo') === '1';
+const INTENTION_LABELS = {relationship:'Looking for a relationship',casual:'Something casual',figuring_out:'Figuring it out',friendship:'New friends'};
+const PROMPT_LABELS = {perfect_sunday:'My perfect Sunday…',known_for:"I'm known for…",green_flag:'A green flag I look for…',first_date:'My ideal first date…'};
 
 /* ---------- tiny helpers ---------- */
 const $ = id => document.getElementById(id);
@@ -510,6 +568,12 @@ function prepOnboarding(){
     $('ob-name').value = me.name||''; $('ob-dob').value = me.dob||'';
     $('ob-gender').value = me.gender||''; $('ob-interest').value = me.interested_in||'';
     $('ob-bio').value = me.bio||'';
+    $('ob-job').value = me.job_title||''; $('ob-education').value = me.education||'';
+    $('ob-intention').value = me.dating_intention||'relationship';
+    $('ob-interests').value = (me.interests||[]).join(', ');
+    $('ob-prompt').value = me.prompt_key||'perfect_sunday';
+    $('ob-prompt-answer').value = me.prompt_answer||'';
+    $('ob-opening-move').value = me.opening_move||'';
     (me.photos||[]).forEach((u,i)=>{ if(i<4) photoFiles[i]=u; });
   }
   renderPhotoGrid();
@@ -541,7 +605,9 @@ async function saveOnboarding(){
   const err=$('ob-error'); err.textContent='';
   const name=$('ob-name').value.trim(), dob=$('ob-dob').value,
         gender=$('ob-gender').value, interest=$('ob-interest').value,
-        bio=$('ob-bio').value.trim();
+        bio=$('ob-bio').value.trim(), job_title=$('ob-job').value.trim(), education=$('ob-education').value.trim(), dating_intention=$('ob-intention').value,
+        interests=$('ob-interests').value.split(',').map(v=>v.trim()).filter(Boolean).slice(0,5),
+        prompt_key=$('ob-prompt').value, prompt_answer=$('ob-prompt-answer').value.trim(), opening_move=$('ob-opening-move').value.trim();
   const photos = photoFiles.filter(Boolean);
   if(!name||!dob||!gender||!interest){ err.textContent='Please fill in every field.'; return; }
   if(ageOf(dob)<18){ err.textContent='Stunner is strictly 18+.'; return; }
@@ -557,7 +623,7 @@ async function saveOnboarding(){
       if(error) throw error;
       urls.push(db.storage.from('photos').getPublicUrl(path).data.publicUrl);
     }
-    const row = { id:session.user.id, name, dob, gender, interested_in:interest, bio, photos:urls, city:'Delhi' };
+    const row = { id:session.user.id, name, dob, gender, interested_in:interest, bio, photos:urls, city:'Delhi', dating_intention, interests, prompt_key, prompt_answer, job_title, education, opening_move };
     const { error } = await db.from('profiles').upsert(row);
     if(error) throw error;
     const { data } = await db.from('profiles').select('*').eq('id',session.user.id).single();
@@ -608,35 +674,60 @@ function switchTab(tab){
 }
 async function enterApp(){ renderMe(); await loadFeed(); }
 
+function openFilters(){
+  $('filter-min-age').value=discoverFilters.minAge; $('filter-max-age').value=discoverFilters.maxAge;
+  $('filter-intention').value=discoverFilters.intention; $('filters-modal').classList.add('open');
+}
+function applyFilters(){
+  const minAge=Math.max(18,Number($('filter-min-age').value)||18), maxAge=Math.min(80,Number($('filter-max-age').value)||80);
+  if(minAge>maxAge){ toast('Minimum age must be below maximum age.'); return; }
+  discoverFilters={minAge,maxAge,intention:$('filter-intention').value}; closeModal('filters-modal'); loadFeed();
+}
+
 async function loadFeed(){
-  const { data, error } = await db.rpc('get_feed', {limit_n:20});
+  const { data, error } = await db.rpc('get_feed', {limit_n:20, min_age:discoverFilters.minAge, max_age:discoverFilters.maxAge, intention_filter:discoverFilters.intention||null, include_test:demoMode});
   if(error){ toast('Could not load profiles: '+error.message); return; }
   deckCards = data||[];
   nextCard();
 }
 function nextCard(){
   currentCard = deckCards.shift() || null;
+  currentPhotoIndex = 0;
   const deck=$('deck');
   if(!currentCard){
     $('deck-actions').style.display='none';
     deck.innerHTML=`<div class="empty"><h3>That's everyone for now</h3><p>Delhi is filling up — new verified profiles land here every day.</p><button class="btn ghost" style="margin-top:14px" onclick="loadFeed()">Refresh</button></div>`;
     return;
   }
-  const p=currentCard, photo=(p.photos||[])[0];
+  renderCurrentCard();
+}
+function renderCurrentCard(){
+  if(!currentCard) return;
+  const deck=$('deck'), p=currentCard, photos=p.photos||[], photo=photos[currentPhotoIndex]||photos[0];
+  const interestChips=(p.interests||[]).map(i=>`<span class="chip">${esc(i)}</span>`).join('');
+  const prompt=p.prompt_answer?`<div class="prompt-card"><small>${esc(PROMPT_LABELS[p.prompt_key]||'A little more about me')}</small>${esc(p.prompt_answer)}</div>`:'';
   deck.innerHTML=`
     <div class="pcard">
       <div class="ph">
         ${photo?`<img src="${esc(photo)}" alt="Photo of ${esc(p.name)}">`:''}
+        ${photos.length>1?`<div class="photo-dots">${photos.map((_,i)=>`<span class="photo-dot ${i===currentPhotoIndex?'active':''}"></span>`).join('')}</div><div class="photo-nav"><button onclick="changePhoto(-1,event)" aria-label="Previous photo">Previous</button><button onclick="changePhoto(1,event)" aria-label="Next photo">Next</button></div>`:''}
         <div class="stamp sm"><span class="s-main">STUNNER</span><span class="s-check">✓</span></div>
         <button class="more" onclick="openProfileMenu('${p.id}')" aria-label="Options">⋯</button>
       </div>
       <div class="info">
         <h3>${esc(p.name)}, ${ageOf(p.dob)}</h3>
-        <div class="meta">${esc(p.city)}</div>
+        <div class="meta">${esc(p.city)} · ${esc(INTENTION_LABELS[p.dating_intention]||'Open to meeting someone')}</div>
+        ${(p.job_title||p.education)?`<div class="meta">${[p.job_title,p.education].filter(Boolean).map(esc).join(' · ')}</div>`:''}
         <div class="bio">${esc(p.bio||'')}</div>
+        ${interestChips?`<div class="chips">${interestChips}</div>`:''}
+        ${prompt}
       </div>
     </div>`;
   $('deck-actions').style.display='flex';
+}
+function changePhoto(direction,event){
+  event.stopPropagation(); const count=(currentCard?.photos||[]).length; if(count<2)return;
+  currentPhotoIndex=(currentPhotoIndex+direction+count)%count; renderCurrentCard();
 }
 async function swipe(liked){
   if(!currentCard) return;
@@ -672,7 +763,7 @@ async function loadMatches(){
   if(error){ list.innerHTML=`<div class="empty">${esc(error.message)}</div>`; return; }
   if(!ms.length){ list.innerHTML=`<div class="empty"><h3>No matches yet</h3><p>Keep liking — when it's mutual, they show up here.</p></div>`; return; }
   const otherIds = ms.map(m=> m.user_a===me.id ? m.user_b : m.user_a);
-  const { data: profs } = await db.from('profiles').select('id,name,photos,dob').in('id', otherIds);
+  const { data: profs } = await db.from('profiles').select('id,name,photos,dob,opening_move').in('id', otherIds);
   const pmap = Object.fromEntries((profs||[]).map(p=>[p.id,p]));
   myMatches = ms.map(m=>({match:m, other:pmap[m.user_a===me.id?m.user_b:m.user_a]||null}));
   list.innerHTML='';
@@ -698,6 +789,11 @@ async function openChat(matchId, other){
   $('panel-chat').classList.add('active');
   const { data } = await db.from('messages').select('*').eq('match_id',matchId).order('created_at');
   (data||[]).forEach(renderMsg);
+  if(!(data||[]).length && other.opening_move){
+    const starter=document.createElement('button'); starter.className='prompt-card'; starter.style.textAlign='left';
+    starter.innerHTML=`<small>${esc(other.name)}'s opening move</small>${esc(other.opening_move)}<div class="hint">Tap to answer</div>`;
+    starter.onclick=()=>{ $('msg-input').value=`${other.opening_move} `; $('msg-input').focus(); }; $('msgs').appendChild(starter);
+  }
   scrollMsgs();
   if(currentChat.channel) db.removeChannel(currentChat.channel);
   currentChat.channel = db.channel('msg-'+matchId)
@@ -755,7 +851,25 @@ function renderMe(){
       ${ph?`<img src="${esc(ph)}" alt="Your photo">`:`<div class="avatar-fallback">${esc((me.name||'?')[0])}</div>`}
       <div><b style="font-size:1.15rem">${esc(me.name)}, ${ageOf(me.dob)}</b><br><span class="tag">✓ Verified · ${esc(me.city)}</span></div>
     </div>
-    <p style="font-size:.92rem;color:var(--ink-soft)">${esc(me.bio||'')}</p>`;
+    <p style="font-size:.92rem;color:var(--ink-soft)">${esc(me.bio||'')}</p>
+    ${(me.job_title||me.education)?`<p class="hint">${[me.job_title,me.education].filter(Boolean).map(esc).join(' · ')}</p>`:''}
+    <div class="chips">${(me.interests||[]).map(i=>`<span class="chip">${esc(i)}</span>`).join('')}</div>
+    <p class="hint" style="margin-top:12px">${esc(INTENTION_LABELS[me.dating_intention]||'')}</p>`;
+}
+
+function openEditProfile(){
+  $('edit-bio').value=me.bio||''; $('edit-job').value=me.job_title||''; $('edit-education').value=me.education||'';
+  $('edit-intention').value=me.dating_intention||'figuring_out'; $('edit-interests').value=(me.interests||[]).join(', ');
+  $('edit-prompt-answer').value=me.prompt_answer||''; $('edit-opening-move').value=me.opening_move||'';
+  $('edit-error').textContent=''; $('edit-profile-modal').classList.add('open');
+}
+async function saveProfileEdits(){
+  const updates={bio:$('edit-bio').value.trim(),job_title:$('edit-job').value.trim(),education:$('edit-education').value.trim(),dating_intention:$('edit-intention').value,interests:$('edit-interests').value.split(',').map(v=>v.trim()).filter(Boolean).slice(0,5),prompt_answer:$('edit-prompt-answer').value.trim(),opening_move:$('edit-opening-move').value.trim()};
+  const btn=$('edit-save'); btn.disabled=true; btn.textContent='Saving…'; $('edit-error').textContent='';
+  const {error}=await db.from('profiles').update(updates).eq('id',me.id);
+  btn.disabled=false; btn.textContent='Save changes';
+  if(error){$('edit-error').textContent=error.message;return;}
+  Object.assign(me,updates); closeModal('edit-profile-modal'); renderMe(); toast('Profile updated.');
 }
 
 /* ---------- legal ---------- */
