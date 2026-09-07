@@ -206,6 +206,8 @@ a{color:var(--peacock)}
 .me-card{background:#fff;border:1.5px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:14px}
 .me-card .row{display:flex;align-items:center;gap:14px;margin-bottom:8px}
 .me-card img{width:70px;height:70px;border-radius:50%;object-fit:cover}
+.verify-row{display:flex;align-items:center;justify-content:space-between;gap:14px;background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
+.verify-row strong{display:block}.verify-row span{font-size:.82rem;color:var(--ink-soft)}
 
 /* modal */
 .modal-back{position:fixed;inset:0;background:rgba(38,25,31,.5);display:none;align-items:flex-end;justify-content:center;z-index:50}
@@ -373,6 +375,7 @@ a{color:var(--peacock)}
     <div class="panel" id="panel-me">
       <h2 style="margin-bottom:14px">You</h2>
       <div class="me-card" id="me-card"></div>
+      <div class="verify-row"><div><strong id="phone-status">Mobile number not verified</strong><span id="phone-status-detail">Add a second trust signal to your profile.</span></div><button class="btn ghost filter-btn" id="phone-action" onclick="openPhoneVerify()">Verify</button></div>
       <button class="btn" style="margin-bottom:10px" onclick="openEditProfile()">Edit profile</button>
       <button class="btn ghost" style="margin-bottom:10px" onclick="openLegal('privacy')">Privacy policy</button>
       <button class="btn ghost" style="margin-bottom:10px" onclick="openLegal('terms')">Terms of use</button>
@@ -413,9 +416,24 @@ a{color:var(--peacock)}
     <div class="field"><label for="edit-interests">Interests</label><input id="edit-interests" maxlength="160"><div class="hint">Up to five, separated with commas.</div></div>
     <div class="field"><label for="edit-prompt-answer">Profile prompt answer</label><textarea id="edit-prompt-answer" rows="2" maxlength="240"></textarea></div>
     <div class="field"><label for="edit-opening-move">Opening move</label><input id="edit-opening-move" maxlength="160"></div>
+    <div class="field"><label>Photos from your device</label><div class="photo-grid" id="edit-photo-grid"></div><input type="file" id="edit-photo-input" accept="image/*" multiple hidden><div class="hint">Upload up to four photos. You can also select photos saved from Instagram or Facebook.</div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px"><button class="btn ghost" type="button" onclick="startSocialImport('Instagram')">Import from Instagram</button><button class="btn ghost" type="button" onclick="startSocialImport('Facebook')">Import from Facebook</button></div>
     <div class="error-msg" id="edit-error"></div>
     <button class="btn" id="edit-save" onclick="saveProfileEdits()">Save changes</button>
     <button class="opt" style="margin-top:8px" onclick="closeModal('edit-profile-modal')">Cancel</button>
+  </div>
+</div>
+
+<!-- ============ PHONE VERIFICATION ============ -->
+<div class="modal-back" id="phone-modal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal">
+    <h3>Verify your mobile</h3>
+    <p class="hint" style="margin-bottom:14px">We’ll send a one-time code by SMS. Use international format, such as +91 98765 43210.</p>
+    <div class="field"><label for="phone-number">Mobile number</label><input id="phone-number" type="tel" inputmode="tel" autocomplete="tel" placeholder="+91 98765 43210"></div>
+    <button class="btn" id="send-phone-otp" onclick="sendPhoneOtp()">Send verification code</button>
+    <div id="phone-otp-wrap" style="display:none;margin-top:16px"><div class="field"><label for="phone-otp">6-digit code</label><input id="phone-otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456"></div><button class="btn" id="verify-phone-otp" onclick="verifyPhoneOtp()">Verify mobile</button></div>
+    <div class="error-msg" id="phone-error"></div>
+    <button class="opt" onclick="closeModal('phone-modal')">Cancel</button>
   </div>
 </div>
 
@@ -498,6 +516,8 @@ let lastNewMatch = null;
 let photoFiles = [null, null, null, null]; // local files or existing URLs
 let selfieFile = null;
 let currentPhotoIndex = 0;
+let editPhotoFiles = [];
+let pendingPhone = '';
 let discoverFilters = {minAge:18, maxAge:45, intention:''};
 const demoMode = new URLSearchParams(location.search).get('demo') === '1';
 const INTENTION_LABELS = {relationship:'Looking for a relationship',casual:'Something casual',figuring_out:'Figuring it out',friendship:'New friends'};
@@ -672,7 +692,7 @@ function switchTab(tab){
   if(tab==='matches') loadMatches();
   if(tab==='me') renderMe();
 }
-async function enterApp(){ renderMe(); await loadFeed(); }
+async function enterApp(){ renderMe(); await refreshPhoneStatus(); await loadFeed(); }
 
 function openFilters(){
   $('filter-min-age').value=discoverFilters.minAge; $('filter-max-age').value=discoverFilters.maxAge;
@@ -849,7 +869,7 @@ function renderMe(){
   $('me-card').innerHTML=`
     <div class="row">
       ${ph?`<img src="${esc(ph)}" alt="Your photo">`:`<div class="avatar-fallback">${esc((me.name||'?')[0])}</div>`}
-      <div><b style="font-size:1.15rem">${esc(me.name)}, ${ageOf(me.dob)}</b><br><span class="tag">✓ Verified · ${esc(me.city)}</span></div>
+      <div><b style="font-size:1.15rem">${esc(me.name)}, ${ageOf(me.dob)}</b><br><span class="tag">✓ Photo verified${me.phone_verified?' · ✓ Mobile verified':''} · ${esc(me.city)}</span></div>
     </div>
     <p style="font-size:.92rem;color:var(--ink-soft)">${esc(me.bio||'')}</p>
     ${(me.job_title||me.education)?`<p class="hint">${[me.job_title,me.education].filter(Boolean).map(esc).join(' · ')}</p>`:''}
@@ -857,14 +877,46 @@ function renderMe(){
     <p class="hint" style="margin-top:12px">${esc(INTENTION_LABELS[me.dating_intention]||'')}</p>`;
 }
 
+async function refreshPhoneStatus(){
+  const {data:{user}}=await db.auth.getUser(); const verified=Boolean(user?.phone_confirmed_at);
+  $('phone-status').textContent=verified?'Mobile number verified':'Mobile number not verified';
+  $('phone-status-detail').textContent=verified?'Your profile has an extra trust signal.':'Add a second trust signal to your profile.';
+  $('phone-action').textContent=verified?'Verified ✓':'Verify'; $('phone-action').disabled=verified;
+  if(verified && !me.phone_verified){ const {error}=await db.from('profiles').update({phone_verified:true}).eq('id',me.id); if(!error)me.phone_verified=true; }
+}
+function normalizePhone(value){ const clean=value.replace(/[\s()-]/g,''); return /^\+\d{10,15}$/.test(clean)?clean:''; }
+function openPhoneVerify(){ pendingPhone=''; $('phone-error').textContent=''; $('phone-otp-wrap').style.display='none'; $('phone-modal').classList.add('open'); }
+async function sendPhoneOtp(){
+  pendingPhone=normalizePhone($('phone-number').value); if(!pendingPhone){$('phone-error').textContent='Enter a valid number with country code, for example +919876543210.';return;}
+  const btn=$('send-phone-otp'); btn.disabled=true; btn.textContent='Sending…'; const {error}=await db.auth.updateUser({phone:pendingPhone}); btn.disabled=false; btn.textContent='Resend code';
+  if(error){$('phone-error').textContent=error.message;return;} $('phone-error').textContent=''; $('phone-otp-wrap').style.display='block'; $('phone-otp').focus();
+}
+async function verifyPhoneOtp(){
+  const token=$('phone-otp').value.trim(); if(!/^\d{6}$/.test(token)){$('phone-error').textContent='Enter the 6-digit code.';return;}
+  const btn=$('verify-phone-otp'); btn.disabled=true; btn.textContent='Verifying…'; const {error}=await db.auth.verifyOtp({phone:pendingPhone,token,type:'phone_change'}); btn.disabled=false; btn.textContent='Verify mobile';
+  if(error){$('phone-error').textContent=error.message;return;} const {error:profileError}=await db.from('profiles').update({phone_verified:true}).eq('id',me.id);
+  if(profileError){$('phone-error').textContent=profileError.message;return;} me.phone_verified=true; closeModal('phone-modal'); await refreshPhoneStatus(); renderMe(); toast('Mobile number verified.');
+}
+
 function openEditProfile(){
   $('edit-bio').value=me.bio||''; $('edit-job').value=me.job_title||''; $('edit-education').value=me.education||'';
   $('edit-intention').value=me.dating_intention||'figuring_out'; $('edit-interests').value=(me.interests||[]).join(', ');
   $('edit-prompt-answer').value=me.prompt_answer||''; $('edit-opening-move').value=me.opening_move||'';
+  editPhotoFiles=[...(me.photos||[])]; renderEditPhotoGrid();
   $('edit-error').textContent=''; $('edit-profile-modal').classList.add('open');
 }
+function renderEditPhotoGrid(){
+  const grid=$('edit-photo-grid'); grid.innerHTML='';
+  for(let i=0;i<4;i++){ const slot=document.createElement('div'); slot.className='photo-slot'; const photo=editPhotoFiles[i];
+    if(photo){ const img=document.createElement('img'); img.alt=`Profile photo ${i+1}`; img.src=typeof photo==='string'?photo:URL.createObjectURL(photo); const remove=document.createElement('button'); remove.className='rm'; remove.textContent='✕'; remove.setAttribute('aria-label','Remove photo'); remove.onclick=e=>{e.stopPropagation();editPhotoFiles.splice(i,1);renderEditPhotoGrid();}; slot.append(img,remove); }
+    else { slot.textContent='＋'; slot.onclick=()=>$('edit-photo-input').click(); } grid.appendChild(slot); }
+}
+$('edit-photo-input').addEventListener('change',e=>{ const available=4-editPhotoFiles.length; editPhotoFiles.push(...[...e.target.files].slice(0,available)); e.target.value=''; renderEditPhotoGrid(); });
+function startSocialImport(service){ $('edit-photo-input').click(); toast(`Choose photos saved from ${service}. Direct connection requires Meta app approval.`); }
 async function saveProfileEdits(){
-  const updates={bio:$('edit-bio').value.trim(),job_title:$('edit-job').value.trim(),education:$('edit-education').value.trim(),dating_intention:$('edit-intention').value,interests:$('edit-interests').value.split(',').map(v=>v.trim()).filter(Boolean).slice(0,5),prompt_answer:$('edit-prompt-answer').value.trim(),opening_move:$('edit-opening-move').value.trim()};
+  if(!editPhotoFiles.length){$('edit-error').textContent='Keep at least one profile photo.';return;}
+  const photos=[]; try { for(const photo of editPhotoFiles){ if(typeof photo==='string'){photos.push(photo);continue;} const blob=await compress(photo); const path=`${session.user.id}/${Date.now()}-${Math.random().toString(36).slice(2,8)}.jpg`; const {error}=await db.storage.from('photos').upload(path,blob,{contentType:'image/jpeg'}); if(error)throw error; photos.push(db.storage.from('photos').getPublicUrl(path).data.publicUrl); } } catch(error){$('edit-error').textContent=error.message;return;}
+  const updates={bio:$('edit-bio').value.trim(),job_title:$('edit-job').value.trim(),education:$('edit-education').value.trim(),dating_intention:$('edit-intention').value,interests:$('edit-interests').value.split(',').map(v=>v.trim()).filter(Boolean).slice(0,5),prompt_answer:$('edit-prompt-answer').value.trim(),opening_move:$('edit-opening-move').value.trim(),photos};
   const btn=$('edit-save'); btn.disabled=true; btn.textContent='Saving…'; $('edit-error').textContent='';
   const {error}=await db.from('profiles').update(updates).eq('id',me.id);
   btn.disabled=false; btn.textContent='Save changes';

@@ -20,6 +20,7 @@ create table public.profiles (
   prompt_key text,
   prompt_answer text check (char_length(prompt_answer) <= 240),
   opening_move text check (char_length(opening_move) <= 160),
+  phone_verified boolean not null default false,
   is_test boolean not null default false,
   photos jsonb not null default '[]',
   status text not null default 'onboarding'
@@ -130,6 +131,13 @@ for each row execute function public.auto_hide_reported();
 create or replace function public.protect_profile_status() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
+  if old.phone_verified is distinct from new.phone_verified and not is_admin() then
+    if not (new.phone_verified and exists (
+      select 1 from auth.users where id = auth.uid() and phone_confirmed_at is not null
+    )) then
+      raise exception 'Phone verification must be confirmed through Supabase Auth';
+    end if;
+  end if;
   if old.status is distinct from new.status and not is_admin() then
     if not (old.status = 'onboarding' and new.status = 'pending') then
       raise exception 'Not allowed to change account status';
