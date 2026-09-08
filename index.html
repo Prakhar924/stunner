@@ -1000,10 +1000,9 @@ function renderEditPhotoGrid(){
 $('edit-photo-input').addEventListener('change',e=>{ const available=6-editPhotoFiles.length; editPhotoFiles.push(...[...e.target.files].slice(0,available)); e.target.value=''; renderEditPhotoGrid(); });
 function startSocialImport(service){ $('edit-photo-input').click(); toast(`Choose photos saved from ${service}. Direct connection requires Meta app approval.`); }
 async function saveProfileEdits(){
-  if(!editPhotoFiles.length){$('edit-error').textContent='Keep at least one profile photo.';return;}
   const photos=[]; try { for(const photo of editPhotoFiles){ if(typeof photo==='string'){photos.push(photo);continue;} const blob=await compress(photo); const path=`${session.user.id}/${Date.now()}-${Math.random().toString(36).slice(2,8)}.jpg`; const {error}=await db.storage.from('photos').upload(path,blob,{contentType:'image/jpeg'}); if(error)throw error; photos.push(db.storage.from('photos').getPublicUrl(path).data.publicUrl); } } catch(error){$('edit-error').textContent=error.message;return;}
-  const username=$('edit-username').value.trim().toLowerCase(); if(!/^[a-z0-9_]{4,24}$/.test(username)){$('edit-error').textContent='Username must be 4–24 letters, numbers, or underscores.';return;}
-  const updates={username,bio:$('edit-bio').value.trim(),job_title:$('edit-job').value.trim(),education:$('edit-education').value.trim(),dating_intention:$('edit-intention').value,interests:$('edit-interests').value.split(',').map(v=>v.trim()).filter(Boolean).slice(0,5),prompt_answer:$('edit-prompt-answer').value.trim(),opening_move:$('edit-opening-move').value.trim(),photos};
+  const username=$('edit-username').value.trim().toLowerCase();
+  const updates={username:username||null,bio:$('edit-bio').value.trim(),job_title:$('edit-job').value.trim(),education:$('edit-education').value.trim(),dating_intention:$('edit-intention').value||null,interests:$('edit-interests').value.split(',').map(v=>v.trim()).filter(Boolean).slice(0,5),prompt_answer:$('edit-prompt-answer').value.trim(),opening_move:$('edit-opening-move').value.trim(),photos};
   const btn=$('edit-save'); btn.disabled=true; btn.textContent='Saving…'; $('edit-error').textContent='';
   const {error}=await db.from('profiles').update(updates).eq('id',me.id);
   btn.disabled=false; btn.textContent='Save changes';
