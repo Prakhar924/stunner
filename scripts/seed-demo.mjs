@@ -44,6 +44,7 @@ async function createOne(i) {
   const profile = {
     id: authUser.id,
     name: `[DEMO] ${sample(names, n)} ${serial}`,
+    username: `demo_${serial}`,
     dob: `${birthYear}-${String((n % 12) + 1).padStart(2,"0")}-${String((n % 27) + 1).padStart(2,"0")}`,
     gender: "woman",
     interested_in: n % 5 === 0 ? "everyone" : "men",

@@ -7,6 +7,7 @@
 create table public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   name text,
+  username text check (username ~ '^[a-z0-9_]{4,24}$'),
   dob date check (dob <= (current_date - interval '18 years')),
   gender text check (gender in ('man','woman','nonbinary')),
   interested_in text check (interested_in in ('men','women','everyone')),
@@ -30,6 +31,8 @@ create table public.profiles (
   created_at timestamptz not null default now()
 );
 
+create unique index profiles_username_unique on public.profiles (lower(username)) where username is not null;
+
 -- ---------- ADMINS ----------
 create table public.admin_users (
   user_id uuid primary key references auth.users(id) on delete cascade
@@ -38,6 +41,15 @@ create table public.admin_users (
 create or replace function public.is_admin() returns boolean
 language sql stable security definer set search_path = public as $$
   select exists (select 1 from admin_users where user_id = auth.uid());
+$$;
+
+-- Resolve an exact username for password login. Keep errors generic in the client.
+create or replace function public.resolve_login_username(login_username text) returns text
+language sql stable security definer set search_path = public, auth as $$
+  select u.email
+  from public.profiles p join auth.users u on u.id = p.id
+  where lower(p.username) = lower(trim(login_username)) and p.status <> 'banned'
+  limit 1;
 $$;
 
 -- ---------- SWIPES ----------

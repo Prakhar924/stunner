@@ -114,6 +114,10 @@ a{color:var(--peacock)}
 .auth-head p{color:var(--ink-soft)}
 .switch-auth{text-align:center;margin-top:16px;font-size:.92rem;color:var(--ink-soft)}
 .switch-auth button{color:var(--rani);font-weight:600;text-decoration:underline}
+.auth-methods{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;background:#F3E9E0;padding:5px;border-radius:14px;margin-bottom:20px}
+.auth-method{padding:10px 4px;border-radius:10px;font-size:.82rem;font-weight:700;color:var(--ink-soft)}
+.auth-method.active{background:#fff;color:var(--rani);box-shadow:0 2px 8px rgba(38,25,31,.08)}
+.text-action{color:var(--rani);font-weight:600;text-decoration:underline}
 
 /* ---------- onboarding / verify / pending ---------- */
 .steps{font-size:.8rem;font-weight:600;letter-spacing:.08em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px}
@@ -265,10 +269,13 @@ a{color:var(--peacock)}
       <h2 id="auth-title">Create your account</h2>
       <p id="auth-sub">Takes two minutes. Verification keeps everyone safe.</p>
     </div>
-    <div class="field"><label for="auth-email">Email</label><input id="auth-email" type="email" autocomplete="email" placeholder="you@example.com"></div>
-    <div class="field"><label for="auth-pass">Password</label><input id="auth-pass" type="password" autocomplete="new-password" placeholder="8+ characters"></div>
+    <div class="auth-methods" id="auth-methods"><button class="auth-method active" data-method="email" onclick="setAuthMethod('email')">Email</button><button class="auth-method" data-method="phone" onclick="setAuthMethod('phone')">Phone</button><button class="auth-method" data-method="username" onclick="setAuthMethod('username')">Username</button></div>
+    <div class="field" id="auth-identifier-field"><label for="auth-identifier" id="auth-identifier-label">Email</label><input id="auth-identifier" type="email" autocomplete="email" placeholder="you@example.com"></div>
+    <div class="field" id="auth-pass-field"><label for="auth-pass">Password</label><input id="auth-pass" type="password" autocomplete="current-password" placeholder="8+ characters"></div>
+    <div class="field" id="auth-otp-field" style="display:none"><label for="auth-otp">6-digit SMS code</label><input id="auth-otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456"></div>
     <div class="error-msg" id="auth-error"></div>
     <button class="btn" id="auth-btn" onclick="doAuth()">Sign up</button>
+    <button class="text-action" id="forgot-btn" style="margin:14px auto 0;display:none" onclick="openRecovery()">Forgot password?</button>
     <div class="switch-auth" id="auth-switch">
       Already on Stunner? <button onclick="showAuth('login')">Log in</button>
     </div>
@@ -282,6 +289,7 @@ a{color:var(--peacock)}
     <div class="steps">Step 1 of 2 — Your profile</div>
     <h2 style="margin-bottom:18px">Tell Delhi who you are</h2>
     <div class="field"><label for="ob-name">First name</label><input id="ob-name" maxlength="40" placeholder="Your first name"></div>
+    <div class="field"><label for="ob-username">Username</label><input id="ob-username" maxlength="24" autocomplete="username" placeholder="prakhar92"><div class="hint">4–24 letters, numbers, or underscores. Used for login.</div></div>
     <div class="field"><label for="ob-dob">Date of birth</label><input id="ob-dob" type="date"><div class="hint">You must be 18 or older. This can't be changed later.</div></div>
     <div class="field"><label for="ob-gender">I am a</label>
       <select id="ob-gender"><option value="">Select…</option><option value="man">Man</option><option value="woman">Woman</option><option value="nonbinary">Non-binary</option></select>
@@ -409,6 +417,7 @@ a{color:var(--peacock)}
 <div class="modal-back" id="edit-profile-modal" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal">
     <h3>Edit your profile</h3>
+    <div class="field"><label for="edit-username">Username</label><input id="edit-username" maxlength="24" autocomplete="username"><div class="hint">Used as an alternative way to log in.</div></div>
     <div class="field"><label for="edit-bio">About you</label><textarea id="edit-bio" rows="3" maxlength="500"></textarea></div>
     <div class="field"><label for="edit-job">Work</label><input id="edit-job" maxlength="80"></div>
     <div class="field"><label for="edit-education">Education</label><input id="edit-education" maxlength="100"></div>
@@ -421,6 +430,29 @@ a{color:var(--peacock)}
     <div class="error-msg" id="edit-error"></div>
     <button class="btn" id="edit-save" onclick="saveProfileEdits()">Save changes</button>
     <button class="opt" style="margin-top:8px" onclick="closeModal('edit-profile-modal')">Cancel</button>
+  </div>
+</div>
+
+<!-- ============ PASSWORD RECOVERY ============ -->
+<div class="modal-back" id="recovery-modal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal">
+    <h3>How do you want to reset your password?</h3>
+    <div id="recovery-methods">
+      <button class="opt" onclick="chooseRecovery('email')"><b>Email reset link</b><br><span class="hint">Get a secure recovery link in your inbox.</span></button>
+      <button class="opt" onclick="chooseRecovery('phone')"><b>Phone verification code</b><br><span class="hint">Use the mobile number already linked to your account.</span></button>
+    </div>
+    <div id="recovery-form" style="display:none">
+      <div class="field"><label id="recovery-id-label" for="recovery-id">Email</label><input id="recovery-id"></div>
+      <button class="btn" id="recovery-send" onclick="sendRecovery()">Continue</button>
+      <div id="recovery-otp-wrap" style="display:none;margin-top:14px"><div class="field"><label for="recovery-otp">6-digit code</label><input id="recovery-otp" inputmode="numeric" maxlength="6"></div><button class="btn" onclick="verifyRecoveryPhone()">Verify code</button></div>
+    </div>
+    <div id="new-password-wrap" style="display:none">
+      <div class="field"><label for="new-password">New password</label><input id="new-password" type="password" autocomplete="new-password" minlength="8"></div>
+      <div class="field"><label for="confirm-password">Confirm new password</label><input id="confirm-password" type="password" autocomplete="new-password" minlength="8"></div>
+      <button class="btn" onclick="saveNewPassword()">Change password</button>
+    </div>
+    <div class="error-msg" id="recovery-error"></div>
+    <button class="opt" onclick="closeModal('recovery-modal')">Cancel</button>
   </div>
 </div>
 
@@ -553,32 +585,83 @@ async function route(){
   if(me.status === 'banned'){ show('screen-banned'); return; }
   show('screen-app'); enterApp();
 }
-db.auth.onAuthStateChange((_e,_s)=>{ /* handled via route() calls */ });
+db.auth.onAuthStateChange((event,_s)=>{ if(event==='PASSWORD_RECOVERY') openRecovery(true); });
 
 /* ---------- auth ---------- */
 let authMode = 'signup';
+let authMethod = 'email';
+let authPhoneOtpSent = false;
 function showAuth(mode){
   authMode = mode;
   $('auth-title').textContent = mode==='signup' ? 'Create your account' : 'Welcome back';
   $('auth-sub').textContent = mode==='signup' ? "Takes two minutes. Verification keeps everyone safe." : "Log in to keep matching.";
   $('auth-btn').textContent = mode==='signup' ? 'Sign up' : 'Log in';
+  $('auth-methods').style.display=mode==='signup'?'none':'grid'; $('forgot-btn').style.display=mode==='signup'?'none':'block';
+  setAuthMethod('email');
   $('auth-switch').innerHTML = mode==='signup'
     ? `Already on Stunner? <button onclick="showAuth('login')">Log in</button>`
     : `New here? <button onclick="showAuth('signup')">Sign up</button>`;
   $('auth-error').textContent='';
   show('screen-auth');
 }
+function setAuthMethod(method){
+  authMethod=method; authPhoneOtpSent=false; $('auth-error').textContent=''; $('auth-otp-field').style.display='none';
+  document.querySelectorAll('.auth-method').forEach(b=>b.classList.toggle('active',b.dataset.method===method));
+  const input=$('auth-identifier'), label=$('auth-identifier-label');
+  if(method==='email'){label.textContent='Email';input.type='email';input.placeholder='you@example.com';input.autocomplete='email';}
+  if(method==='phone'){label.textContent='Phone number';input.type='tel';input.placeholder='+91 98765 43210';input.autocomplete='tel';}
+  if(method==='username'){label.textContent='Username';input.type='text';input.placeholder='your_username';input.autocomplete='username';}
+  $('auth-pass-field').style.display=method==='phone'?'none':'block'; $('auth-btn').textContent=authMode==='signup'?'Sign up':method==='phone'?'Send SMS code':'Log in';
+}
 async function doAuth(){
-  const email=$('auth-email').value.trim(), pass=$('auth-pass').value;
+  const identifier=$('auth-identifier').value.trim(), pass=$('auth-pass').value;
   $('auth-error').textContent='';
-  if(!email || pass.length<8){ $('auth-error').textContent='Enter your email and a password of 8+ characters.'; return; }
+  if(!identifier){$('auth-error').textContent=`Enter your ${authMethod}.`;return;}
+  if(authMethod!=='phone' && pass.length<8){$('auth-error').textContent='Enter a password of 8+ characters.';return;}
   $('auth-btn').disabled=true;
-  const fn = authMode==='signup' ? db.auth.signUp({email,password:pass}) : db.auth.signInWithPassword({email,password:pass});
-  const { data, error } = await fn;
+  let data,error;
+  if(authMode==='signup')({data,error}=await db.auth.signUp({email:identifier,password:pass}));
+  else if(authMethod==='email')({data,error}=await db.auth.signInWithPassword({email:identifier,password:pass}));
+  else if(authMethod==='username'){
+    const {data:email,error:lookupError}=await db.rpc('resolve_login_username',{login_username:identifier});
+    if(lookupError||!email) error=new Error('Username or password is incorrect.'); else ({data,error}=await db.auth.signInWithPassword({email,password:pass}));
+  } else if(!authPhoneOtpSent){
+    const phone=normalizePhone(identifier); if(!phone){error=new Error('Use international format, for example +919876543210.');}
+    else {({data,error}=await db.auth.signInWithOtp({phone,options:{shouldCreateUser:false}})); if(!error){authPhoneOtpSent=true;$('auth-otp-field').style.display='block';$('auth-btn').textContent='Verify and log in';$('auth-otp').focus();}}
+  } else {
+    const phone=normalizePhone(identifier),token=$('auth-otp').value.trim(); ({data,error}=await db.auth.verifyOtp({phone,token,type:'sms'}));
+  }
   $('auth-btn').disabled=false;
   if(error){ $('auth-error').textContent=error.message; return; }
+  if(authMethod==='phone'&&authPhoneOtpSent&&!data?.session){$('auth-error').textContent='Code sent. Enter the 6-digit SMS code.';return;}
   if(authMode==='signup' && !data.session){ $('auth-error').textContent='Check your email to confirm your account, then log in.'; return; }
   route();
+}
+let recoveryMethod='email';
+function openRecovery(showPassword=false){
+  $('recovery-error').textContent=''; $('recovery-methods').style.display=showPassword?'none':'block'; $('recovery-form').style.display='none'; $('new-password-wrap').style.display=showPassword?'block':'none'; $('recovery-modal').classList.add('open');
+}
+function chooseRecovery(method){
+  recoveryMethod=method; $('recovery-methods').style.display='none'; $('recovery-form').style.display='block'; $('recovery-otp-wrap').style.display='none';
+  $('recovery-id-label').textContent=method==='email'?'Email address':'Verified phone number'; $('recovery-id').type=method==='email'?'email':'tel'; $('recovery-id').placeholder=method==='email'?'you@example.com':'+91 98765 43210';
+}
+async function sendRecovery(){
+  const value=$('recovery-id').value.trim(); $('recovery-error').textContent='';
+  if(recoveryMethod==='email'){
+    const redirectTo=location.origin+location.pathname; const {error}=await db.auth.resetPasswordForEmail(value,{redirectTo});
+    $('recovery-error').textContent=error?error.message:'If an account exists, a secure reset link has been sent.';
+  } else {
+    const phone=normalizePhone(value); if(!phone){$('recovery-error').textContent='Enter a valid number with country code.';return;}
+    const {error}=await db.auth.signInWithOtp({phone,options:{shouldCreateUser:false}}); if(error){$('recovery-error').textContent=error.message;return;} $('recovery-otp-wrap').style.display='block'; $('recovery-error').textContent='SMS code sent.';
+  }
+}
+async function verifyRecoveryPhone(){
+  const phone=normalizePhone($('recovery-id').value),token=$('recovery-otp').value.trim(); const {error}=await db.auth.verifyOtp({phone,token,type:'sms'});
+  if(error){$('recovery-error').textContent=error.message;return;} $('recovery-form').style.display='none'; $('new-password-wrap').style.display='block'; $('recovery-error').textContent='Identity verified. Choose a new password.';
+}
+async function saveNewPassword(){
+  const password=$('new-password').value,confirm=$('confirm-password').value; if(password.length<8){$('recovery-error').textContent='Use at least 8 characters.';return;} if(password!==confirm){$('recovery-error').textContent='Passwords do not match.';return;}
+  const {error}=await db.auth.updateUser({password}); if(error){$('recovery-error').textContent=error.message;return;} closeModal('recovery-modal'); toast('Password changed successfully.'); route();
 }
 async function logout(){ await db.auth.signOut(); me=null; session=null; show('screen-landing'); }
 
@@ -586,6 +669,7 @@ async function logout(){ await db.auth.signOut(); me=null; session=null; show('s
 function prepOnboarding(){
   if(me){
     $('ob-name').value = me.name||''; $('ob-dob').value = me.dob||'';
+    $('ob-username').value = me.username||'';
     $('ob-gender').value = me.gender||''; $('ob-interest').value = me.interested_in||'';
     $('ob-bio').value = me.bio||'';
     $('ob-job').value = me.job_title||''; $('ob-education').value = me.education||'';
@@ -623,13 +707,14 @@ $('photo-input').addEventListener('change', e=>{
 
 async function saveOnboarding(){
   const err=$('ob-error'); err.textContent='';
-  const name=$('ob-name').value.trim(), dob=$('ob-dob').value,
+  const name=$('ob-name').value.trim(), username=$('ob-username').value.trim().toLowerCase(), dob=$('ob-dob').value,
         gender=$('ob-gender').value, interest=$('ob-interest').value,
         bio=$('ob-bio').value.trim(), job_title=$('ob-job').value.trim(), education=$('ob-education').value.trim(), dating_intention=$('ob-intention').value,
         interests=$('ob-interests').value.split(',').map(v=>v.trim()).filter(Boolean).slice(0,5),
         prompt_key=$('ob-prompt').value, prompt_answer=$('ob-prompt-answer').value.trim(), opening_move=$('ob-opening-move').value.trim();
   const photos = photoFiles.filter(Boolean);
   if(!name||!dob||!gender||!interest){ err.textContent='Please fill in every field.'; return; }
+  if(!/^[a-z0-9_]{4,24}$/.test(username)){err.textContent='Username must be 4–24 letters, numbers, or underscores.';return;}
   if(ageOf(dob)<18){ err.textContent='Stunner is strictly 18+.'; return; }
   if(!photos.length){ err.textContent='Add at least one photo.'; return; }
   $('ob-btn').disabled=true; $('ob-btn').textContent='Saving…';
@@ -643,7 +728,7 @@ async function saveOnboarding(){
       if(error) throw error;
       urls.push(db.storage.from('photos').getPublicUrl(path).data.publicUrl);
     }
-    const row = { id:session.user.id, name, dob, gender, interested_in:interest, bio, photos:urls, city:'Delhi', dating_intention, interests, prompt_key, prompt_answer, job_title, education, opening_move };
+    const row = { id:session.user.id, name, username, dob, gender, interested_in:interest, bio, photos:urls, city:'Delhi', dating_intention, interests, prompt_key, prompt_answer, job_title, education, opening_move };
     const { error } = await db.from('profiles').upsert(row);
     if(error) throw error;
     const { data } = await db.from('profiles').select('*').eq('id',session.user.id).single();
@@ -869,7 +954,7 @@ function renderMe(){
   $('me-card').innerHTML=`
     <div class="row">
       ${ph?`<img src="${esc(ph)}" alt="Your photo">`:`<div class="avatar-fallback">${esc((me.name||'?')[0])}</div>`}
-      <div><b style="font-size:1.15rem">${esc(me.name)}, ${ageOf(me.dob)}</b><br><span class="tag">✓ Photo verified${me.phone_verified?' · ✓ Mobile verified':''} · ${esc(me.city)}</span></div>
+      <div><b style="font-size:1.15rem">${esc(me.name)}, ${ageOf(me.dob)}</b>${me.username?`<br><span class="hint">@${esc(me.username)}</span>`:''}<br><span class="tag">✓ Photo verified${me.phone_verified?' · ✓ Mobile verified':''} · ${esc(me.city)}</span></div>
     </div>
     <p style="font-size:.92rem;color:var(--ink-soft)">${esc(me.bio||'')}</p>
     ${(me.job_title||me.education)?`<p class="hint">${[me.job_title,me.education].filter(Boolean).map(esc).join(' · ')}</p>`:''}
@@ -899,6 +984,7 @@ async function verifyPhoneOtp(){
 }
 
 function openEditProfile(){
+  $('edit-username').value=me.username||'';
   $('edit-bio').value=me.bio||''; $('edit-job').value=me.job_title||''; $('edit-education').value=me.education||'';
   $('edit-intention').value=me.dating_intention||'figuring_out'; $('edit-interests').value=(me.interests||[]).join(', ');
   $('edit-prompt-answer').value=me.prompt_answer||''; $('edit-opening-move').value=me.opening_move||'';
@@ -916,7 +1002,8 @@ function startSocialImport(service){ $('edit-photo-input').click(); toast(`Choos
 async function saveProfileEdits(){
   if(!editPhotoFiles.length){$('edit-error').textContent='Keep at least one profile photo.';return;}
   const photos=[]; try { for(const photo of editPhotoFiles){ if(typeof photo==='string'){photos.push(photo);continue;} const blob=await compress(photo); const path=`${session.user.id}/${Date.now()}-${Math.random().toString(36).slice(2,8)}.jpg`; const {error}=await db.storage.from('photos').upload(path,blob,{contentType:'image/jpeg'}); if(error)throw error; photos.push(db.storage.from('photos').getPublicUrl(path).data.publicUrl); } } catch(error){$('edit-error').textContent=error.message;return;}
-  const updates={bio:$('edit-bio').value.trim(),job_title:$('edit-job').value.trim(),education:$('edit-education').value.trim(),dating_intention:$('edit-intention').value,interests:$('edit-interests').value.split(',').map(v=>v.trim()).filter(Boolean).slice(0,5),prompt_answer:$('edit-prompt-answer').value.trim(),opening_move:$('edit-opening-move').value.trim(),photos};
+  const username=$('edit-username').value.trim().toLowerCase(); if(!/^[a-z0-9_]{4,24}$/.test(username)){$('edit-error').textContent='Username must be 4–24 letters, numbers, or underscores.';return;}
+  const updates={username,bio:$('edit-bio').value.trim(),job_title:$('edit-job').value.trim(),education:$('edit-education').value.trim(),dating_intention:$('edit-intention').value,interests:$('edit-interests').value.split(',').map(v=>v.trim()).filter(Boolean).slice(0,5),prompt_answer:$('edit-prompt-answer').value.trim(),opening_move:$('edit-opening-move').value.trim(),photos};
   const btn=$('edit-save'); btn.disabled=true; btn.textContent='Saving…'; $('edit-error').textContent='';
   const {error}=await db.from('profiles').update(updates).eq('id',me.id);
   btn.disabled=false; btn.textContent='Save changes';

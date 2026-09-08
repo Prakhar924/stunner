@@ -2,6 +2,7 @@
 -- Run once in Supabase SQL Editor after the original schema.sql.
 
 alter table public.profiles
+  add column if not exists username text,
   add column if not exists dating_intention text not null default 'figuring_out',
   add column if not exists interests jsonb not null default '[]',
   add column if not exists prompt_key text,
@@ -11,6 +12,21 @@ alter table public.profiles
   add column if not exists opening_move text,
   add column if not exists phone_verified boolean not null default false,
   add column if not exists is_test boolean not null default false;
+
+create unique index if not exists profiles_username_unique on public.profiles (lower(username)) where username is not null;
+
+do $$ begin
+  alter table public.profiles add constraint profiles_username_format_check check (username is null or username ~ '^[a-z0-9_]{4,24}$');
+exception when duplicate_object then null;
+end $$;
+
+create or replace function public.resolve_login_username(login_username text) returns text
+language sql stable security definer set search_path = public, auth as $$
+  select u.email
+  from public.profiles p join auth.users u on u.id = p.id
+  where lower(p.username) = lower(trim(login_username)) and p.status <> 'banned'
+  limit 1;
+$$;
 
 do $$ begin
   alter table public.profiles add constraint profiles_dating_intention_check
