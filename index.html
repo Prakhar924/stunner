@@ -310,7 +310,7 @@ a{color:var(--peacock)}
     <div class="field"><label for="ob-prompt-answer">Your answer</label><textarea id="ob-prompt-answer" rows="2" maxlength="240" placeholder="Give someone an easy way to start a conversation"></textarea></div>
     <div class="field"><label for="ob-opening-move">Your opening move</label><input id="ob-opening-move" maxlength="160" placeholder="What's your most underrated Delhi food spot?"><div class="hint">Matches can answer this to start a meaningful chat.</div></div>
     <div class="field">
-      <label>Photos (1–4, first one is your main photo)</label>
+      <label>Photos (1–6, first one is your main photo)</label>
       <div class="photo-grid" id="photo-grid"></div>
       <input type="file" id="photo-input" accept="image/*" hidden>
     </div>
@@ -425,7 +425,7 @@ a{color:var(--peacock)}
     <div class="field"><label for="edit-interests">Interests</label><input id="edit-interests" maxlength="160"><div class="hint">Up to five, separated with commas.</div></div>
     <div class="field"><label for="edit-prompt-answer">Profile prompt answer</label><textarea id="edit-prompt-answer" rows="2" maxlength="240"></textarea></div>
     <div class="field"><label for="edit-opening-move">Opening move</label><input id="edit-opening-move" maxlength="160"></div>
-    <div class="field"><label>Photos from your device</label><div class="photo-grid" id="edit-photo-grid"></div><input type="file" id="edit-photo-input" accept="image/*" multiple hidden><div class="hint">Upload up to four photos. You can also select photos saved from Instagram or Facebook.</div></div>
+    <div class="field"><label>Photos from your device</label><div class="photo-grid" id="edit-photo-grid"></div><input type="file" id="edit-photo-input" accept="image/*" multiple hidden><div class="hint">Upload up to six photos. You can also select photos saved from Instagram or Facebook.</div></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px"><button class="btn ghost" type="button" onclick="startSocialImport('Instagram')">Import from Instagram</button><button class="btn ghost" type="button" onclick="startSocialImport('Facebook')">Import from Facebook</button></div>
     <div class="error-msg" id="edit-error"></div>
     <button class="btn" id="edit-save" onclick="saveProfileEdits()">Save changes</button>
@@ -545,7 +545,7 @@ let currentCard = null;
 let myMatches = [];     // [{match, other}]
 let currentChat = { matchId: null, otherId: null, channel: null };
 let lastNewMatch = null;
-let photoFiles = [null, null, null, null]; // local files or existing URLs
+let photoFiles = [null, null, null, null, null, null]; // local files or existing URLs
 let selfieFile = null;
 let currentPhotoIndex = 0;
 let editPhotoFiles = [];
@@ -678,20 +678,20 @@ function prepOnboarding(){
     $('ob-prompt').value = me.prompt_key||'perfect_sunday';
     $('ob-prompt-answer').value = me.prompt_answer||'';
     $('ob-opening-move').value = me.opening_move||'';
-    (me.photos||[]).forEach((u,i)=>{ if(i<4) photoFiles[i]=u; });
+    (me.photos||[]).forEach((u,i)=>{ if(i<6) photoFiles[i]=u; });
   }
   renderPhotoGrid();
 }
 function renderPhotoGrid(){
   const g=$('photo-grid'); g.innerHTML='';
-  for(let i=0;i<4;i++){
+  for(let i=0;i<6;i++){
     const slot=document.createElement('div'); slot.className='photo-slot';
     const f=photoFiles[i];
     if(f){
       const img=document.createElement('img'); img.alt='Your photo';
       img.src = typeof f==='string' ? f : URL.createObjectURL(f);
       const rm=document.createElement('button'); rm.className='rm'; rm.textContent='✕'; rm.setAttribute('aria-label','Remove photo');
-      rm.onclick=e=>{ e.stopPropagation(); photoFiles[i]=null; photoFiles=photoFiles.filter(Boolean); while(photoFiles.length<4)photoFiles.push(null); renderPhotoGrid(); };
+      rm.onclick=e=>{ e.stopPropagation(); photoFiles[i]=null; photoFiles=photoFiles.filter(Boolean); while(photoFiles.length<6)photoFiles.push(null); renderPhotoGrid(); };
       slot.append(img,rm);
     } else {
       slot.textContent='＋';
@@ -993,11 +993,11 @@ function openEditProfile(){
 }
 function renderEditPhotoGrid(){
   const grid=$('edit-photo-grid'); grid.innerHTML='';
-  for(let i=0;i<4;i++){ const slot=document.createElement('div'); slot.className='photo-slot'; const photo=editPhotoFiles[i];
+  for(let i=0;i<6;i++){ const slot=document.createElement('div'); slot.className='photo-slot'; const photo=editPhotoFiles[i];
     if(photo){ const img=document.createElement('img'); img.alt=`Profile photo ${i+1}`; img.src=typeof photo==='string'?photo:URL.createObjectURL(photo); const remove=document.createElement('button'); remove.className='rm'; remove.textContent='✕'; remove.setAttribute('aria-label','Remove photo'); remove.onclick=e=>{e.stopPropagation();editPhotoFiles.splice(i,1);renderEditPhotoGrid();}; slot.append(img,remove); }
     else { slot.textContent='＋'; slot.onclick=()=>$('edit-photo-input').click(); } grid.appendChild(slot); }
 }
-$('edit-photo-input').addEventListener('change',e=>{ const available=4-editPhotoFiles.length; editPhotoFiles.push(...[...e.target.files].slice(0,available)); e.target.value=''; renderEditPhotoGrid(); });
+$('edit-photo-input').addEventListener('change',e=>{ const available=6-editPhotoFiles.length; editPhotoFiles.push(...[...e.target.files].slice(0,available)); e.target.value=''; renderEditPhotoGrid(); });
 function startSocialImport(service){ $('edit-photo-input').click(); toast(`Choose photos saved from ${service}. Direct connection requires Meta app approval.`); }
 async function saveProfileEdits(){
   if(!editPhotoFiles.length){$('edit-error').textContent='Keep at least one profile photo.';return;}

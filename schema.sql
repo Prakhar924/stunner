@@ -23,7 +23,7 @@ create table public.profiles (
   opening_move text check (char_length(opening_move) <= 160),
   phone_verified boolean not null default false,
   is_test boolean not null default false,
-  photos jsonb not null default '[]',
+  photos jsonb not null default '[]' check (jsonb_typeof(photos) = 'array' and jsonb_array_length(photos) <= 6),
   status text not null default 'onboarding'
     check (status in ('onboarding','pending','verified','banned')),
   verification_code text,

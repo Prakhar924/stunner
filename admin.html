@@ -158,7 +158,7 @@ async function renderReports(){
       <h3>${esc(rep?.name||'Unknown')} <span class="pill ${rep?.status||'onboarding'}">${esc(rep?.status||'?')}</span></h3>
       <p class="meta">Reported by ${esc(by?.name||'Unknown')} · ${new Date(r.created_at).toLocaleString()}</p>
       <p><span class="reason">${esc(r.reason.replace(/_/g,' '))}</span>${r.details?` — ${esc(r.details)}`:''}</p>
-      <div class="imgs">${(rep?.photos||[]).slice(0,4).map(u=>`<figure><img src="${esc(u)}" alt="Reported user's photo"></figure>`).join('')}</div>
+      <div class="imgs">${(rep?.photos||[]).slice(0,6).map(u=>`<figure><img src="${esc(u)}" alt="Reported user's photo"></figure>`).join('')}</div>
       <p class="meta">Bio: ${esc(rep?.bio||'—')}</p>
       <div class="row">
         <button class="btn bad" onclick="banAndResolve('${r.id}','${r.reported}',this)">⛔ Ban user</button>

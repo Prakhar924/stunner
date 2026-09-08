@@ -75,6 +75,12 @@ exception when duplicate_object then null;
 end $$;
 
 do $$ begin
+  alter table public.profiles add constraint profiles_photos_limit_check
+    check (jsonb_typeof(photos) = 'array' and jsonb_array_length(photos) <= 6);
+exception when duplicate_object then null;
+end $$;
+
+do $$ begin
   alter table public.profiles add constraint profiles_prompt_answer_length_check
     check (char_length(prompt_answer) <= 240);
 exception when duplicate_object then null;
