@@ -10,7 +10,6 @@ alter table public.profiles
   add column if not exists job_title text,
   add column if not exists education text,
   add column if not exists opening_move text,
-  add column if not exists phone_verified boolean not null default false,
   add column if not exists is_test boolean not null default false;
 
 create unique index if not exists profiles_username_unique on public.profiles (lower(username)) where username is not null;
@@ -37,13 +36,6 @@ end $$;
 create or replace function public.protect_profile_status() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
-  if old.phone_verified is distinct from new.phone_verified and not is_admin() then
-    if not (new.phone_verified and exists (
-      select 1 from auth.users where id = auth.uid() and phone_confirmed_at is not null
-    )) then
-      raise exception 'Phone verification must be confirmed through Supabase Auth';
-    end if;
-  end if;
   if old.status is distinct from new.status and not is_admin() then
     if not (old.status = 'onboarding' and new.status = 'pending') then
       raise exception 'Not allowed to change account status';

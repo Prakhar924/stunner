@@ -269,10 +269,9 @@ a{color:var(--peacock)}
       <h2 id="auth-title">Create your account</h2>
       <p id="auth-sub">Takes two minutes. Verification keeps everyone safe.</p>
     </div>
-    <div class="auth-methods" id="auth-methods"><button class="auth-method active" data-method="email" onclick="setAuthMethod('email')">Email</button><button class="auth-method" data-method="phone" onclick="setAuthMethod('phone')">Phone</button><button class="auth-method" data-method="username" onclick="setAuthMethod('username')">Username</button></div>
+    <div class="auth-methods" id="auth-methods"><button class="auth-method active" data-method="email" onclick="setAuthMethod('email')">Email</button><button class="auth-method" data-method="username" onclick="setAuthMethod('username')">Username</button></div>
     <div class="field" id="auth-identifier-field"><label for="auth-identifier" id="auth-identifier-label">Email</label><input id="auth-identifier" type="email" autocomplete="email" placeholder="you@example.com"></div>
     <div class="field" id="auth-pass-field"><label for="auth-pass">Password</label><input id="auth-pass" type="password" autocomplete="current-password" placeholder="8+ characters"></div>
-    <div class="field" id="auth-otp-field" style="display:none"><label for="auth-otp">6-digit SMS code</label><input id="auth-otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456"></div>
     <div class="error-msg" id="auth-error"></div>
     <button class="btn" id="auth-btn" onclick="doAuth()">Sign up</button>
     <button class="text-action" id="forgot-btn" style="margin:14px auto 0;display:none" onclick="openRecovery()">Forgot password?</button>
@@ -383,7 +382,6 @@ a{color:var(--peacock)}
     <div class="panel" id="panel-me">
       <h2 style="margin-bottom:14px">You</h2>
       <div class="me-card" id="me-card"></div>
-      <div class="verify-row"><div><strong id="phone-status">Mobile number not verified</strong><span id="phone-status-detail">Add a second trust signal to your profile.</span></div><button class="btn ghost filter-btn" id="phone-action" onclick="openPhoneVerify()">Verify</button></div>
       <button class="btn" style="margin-bottom:10px" onclick="openEditProfile()">Edit profile</button>
       <button class="btn ghost" style="margin-bottom:10px" onclick="openLegal('privacy')">Privacy policy</button>
       <button class="btn ghost" style="margin-bottom:10px" onclick="openLegal('terms')">Terms of use</button>
@@ -436,15 +434,11 @@ a{color:var(--peacock)}
 <!-- ============ PASSWORD RECOVERY ============ -->
 <div class="modal-back" id="recovery-modal" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal">
-    <h3>How do you want to reset your password?</h3>
-    <div id="recovery-methods">
-      <button class="opt" onclick="chooseRecovery('email')"><b>Email reset link</b><br><span class="hint">Get a secure recovery link in your inbox.</span></button>
-      <button class="opt" onclick="chooseRecovery('phone')"><b>Phone verification code</b><br><span class="hint">Use the mobile number already linked to your account.</span></button>
-    </div>
-    <div id="recovery-form" style="display:none">
-      <div class="field"><label id="recovery-id-label" for="recovery-id">Email</label><input id="recovery-id"></div>
-      <button class="btn" id="recovery-send" onclick="sendRecovery()">Continue</button>
-      <div id="recovery-otp-wrap" style="display:none;margin-top:14px"><div class="field"><label for="recovery-otp">6-digit code</label><input id="recovery-otp" inputmode="numeric" maxlength="6"></div><button class="btn" onclick="verifyRecoveryPhone()">Verify code</button></div>
+    <h3>Reset your password</h3>
+    <p class="hint" style="margin-bottom:14px">We’ll email you a secure password-reset link.</p>
+    <div id="recovery-form">
+      <div class="field"><label for="recovery-id">Email address</label><input id="recovery-id" type="email" autocomplete="email" placeholder="you@example.com"></div>
+      <button class="btn" id="recovery-send" onclick="sendRecovery()">Send reset link</button>
     </div>
     <div id="new-password-wrap" style="display:none">
       <div class="field"><label for="new-password">New password</label><input id="new-password" type="password" autocomplete="new-password" minlength="8"></div>
@@ -453,19 +447,6 @@ a{color:var(--peacock)}
     </div>
     <div class="error-msg" id="recovery-error"></div>
     <button class="opt" onclick="closeModal('recovery-modal')">Cancel</button>
-  </div>
-</div>
-
-<!-- ============ PHONE VERIFICATION ============ -->
-<div class="modal-back" id="phone-modal" onclick="if(event.target===this)this.classList.remove('open')">
-  <div class="modal">
-    <h3>Verify your mobile</h3>
-    <p class="hint" style="margin-bottom:14px">We’ll send a one-time code by SMS. Use international format, such as +91 98765 43210.</p>
-    <div class="field"><label for="phone-number">Mobile number</label><input id="phone-number" type="tel" inputmode="tel" autocomplete="tel" placeholder="+91 98765 43210"></div>
-    <button class="btn" id="send-phone-otp" onclick="sendPhoneOtp()">Send verification code</button>
-    <div id="phone-otp-wrap" style="display:none;margin-top:16px"><div class="field"><label for="phone-otp">6-digit code</label><input id="phone-otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456"></div><button class="btn" id="verify-phone-otp" onclick="verifyPhoneOtp()">Verify mobile</button></div>
-    <div class="error-msg" id="phone-error"></div>
-    <button class="opt" onclick="closeModal('phone-modal')">Cancel</button>
   </div>
 </div>
 
@@ -549,7 +530,6 @@ let photoFiles = [null, null, null, null, null, null]; // local files or existin
 let selfieFile = null;
 let currentPhotoIndex = 0;
 let editPhotoFiles = [];
-let pendingPhone = '';
 let discoverFilters = {minAge:18, maxAge:45, intention:''};
 const demoMode = new URLSearchParams(location.search).get('demo') === '1';
 const INTENTION_LABELS = {relationship:'Looking for a relationship',casual:'Something casual',figuring_out:'Figuring it out',friendship:'New friends'};
@@ -590,7 +570,6 @@ db.auth.onAuthStateChange((event,_s)=>{ if(event==='PASSWORD_RECOVERY') openReco
 /* ---------- auth ---------- */
 let authMode = 'signup';
 let authMethod = 'email';
-let authPhoneOtpSent = false;
 function showAuth(mode){
   authMode = mode;
   $('auth-title').textContent = mode==='signup' ? 'Create your account' : 'Welcome back';
@@ -605,19 +584,18 @@ function showAuth(mode){
   show('screen-auth');
 }
 function setAuthMethod(method){
-  authMethod=method; authPhoneOtpSent=false; $('auth-error').textContent=''; $('auth-otp-field').style.display='none';
+  authMethod=method; $('auth-error').textContent='';
   document.querySelectorAll('.auth-method').forEach(b=>b.classList.toggle('active',b.dataset.method===method));
   const input=$('auth-identifier'), label=$('auth-identifier-label');
   if(method==='email'){label.textContent='Email';input.type='email';input.placeholder='you@example.com';input.autocomplete='email';}
-  if(method==='phone'){label.textContent='Phone number';input.type='tel';input.placeholder='+91 98765 43210';input.autocomplete='tel';}
   if(method==='username'){label.textContent='Username';input.type='text';input.placeholder='your_username';input.autocomplete='username';}
-  $('auth-pass-field').style.display=method==='phone'?'none':'block'; $('auth-btn').textContent=authMode==='signup'?'Sign up':method==='phone'?'Send SMS code':'Log in';
+  $('auth-btn').textContent=authMode==='signup'?'Sign up':'Log in';
 }
 async function doAuth(){
   const identifier=$('auth-identifier').value.trim(), pass=$('auth-pass').value;
   $('auth-error').textContent='';
   if(!identifier){$('auth-error').textContent=`Enter your ${authMethod}.`;return;}
-  if(authMethod!=='phone' && pass.length<8){$('auth-error').textContent='Enter a password of 8+ characters.';return;}
+  if(pass.length<8){$('auth-error').textContent='Enter a password of 8+ characters.';return;}
   $('auth-btn').disabled=true;
   let data,error;
   if(authMode==='signup')({data,error}=await db.auth.signUp({email:identifier,password:pass}));
@@ -625,39 +603,19 @@ async function doAuth(){
   else if(authMethod==='username'){
     const {data:email,error:lookupError}=await db.rpc('resolve_login_username',{login_username:identifier});
     if(lookupError||!email) error=new Error('Username or password is incorrect.'); else ({data,error}=await db.auth.signInWithPassword({email,password:pass}));
-  } else if(!authPhoneOtpSent){
-    const phone=normalizePhone(identifier); if(!phone){error=new Error('Use international format, for example +919876543210.');}
-    else {({data,error}=await db.auth.signInWithOtp({phone,options:{shouldCreateUser:false}})); if(!error){authPhoneOtpSent=true;$('auth-otp-field').style.display='block';$('auth-btn').textContent='Verify and log in';$('auth-otp').focus();}}
-  } else {
-    const phone=normalizePhone(identifier),token=$('auth-otp').value.trim(); ({data,error}=await db.auth.verifyOtp({phone,token,type:'sms'}));
   }
   $('auth-btn').disabled=false;
   if(error){ $('auth-error').textContent=error.message; return; }
-  if(authMethod==='phone'&&authPhoneOtpSent&&!data?.session){$('auth-error').textContent='Code sent. Enter the 6-digit SMS code.';return;}
   if(authMode==='signup' && !data.session){ $('auth-error').textContent='Check your email to confirm your account, then log in.'; return; }
   route();
 }
-let recoveryMethod='email';
 function openRecovery(showPassword=false){
-  $('recovery-error').textContent=''; $('recovery-methods').style.display=showPassword?'none':'block'; $('recovery-form').style.display='none'; $('new-password-wrap').style.display=showPassword?'block':'none'; $('recovery-modal').classList.add('open');
-}
-function chooseRecovery(method){
-  recoveryMethod=method; $('recovery-methods').style.display='none'; $('recovery-form').style.display='block'; $('recovery-otp-wrap').style.display='none';
-  $('recovery-id-label').textContent=method==='email'?'Email address':'Verified phone number'; $('recovery-id').type=method==='email'?'email':'tel'; $('recovery-id').placeholder=method==='email'?'you@example.com':'+91 98765 43210';
+  $('recovery-error').textContent=''; $('recovery-form').style.display=showPassword?'none':'block'; $('new-password-wrap').style.display=showPassword?'block':'none'; $('recovery-modal').classList.add('open');
 }
 async function sendRecovery(){
   const value=$('recovery-id').value.trim(); $('recovery-error').textContent='';
-  if(recoveryMethod==='email'){
-    const redirectTo=location.origin+location.pathname; const {error}=await db.auth.resetPasswordForEmail(value,{redirectTo});
-    $('recovery-error').textContent=error?error.message:'If an account exists, a secure reset link has been sent.';
-  } else {
-    const phone=normalizePhone(value); if(!phone){$('recovery-error').textContent='Enter a valid number with country code.';return;}
-    const {error}=await db.auth.signInWithOtp({phone,options:{shouldCreateUser:false}}); if(error){$('recovery-error').textContent=error.message;return;} $('recovery-otp-wrap').style.display='block'; $('recovery-error').textContent='SMS code sent.';
-  }
-}
-async function verifyRecoveryPhone(){
-  const phone=normalizePhone($('recovery-id').value),token=$('recovery-otp').value.trim(); const {error}=await db.auth.verifyOtp({phone,token,type:'sms'});
-  if(error){$('recovery-error').textContent=error.message;return;} $('recovery-form').style.display='none'; $('new-password-wrap').style.display='block'; $('recovery-error').textContent='Identity verified. Choose a new password.';
+  const redirectTo=location.origin+location.pathname; const {error}=await db.auth.resetPasswordForEmail(value,{redirectTo});
+  $('recovery-error').textContent=error?error.message:'If an account exists, a secure reset link has been sent.';
 }
 async function saveNewPassword(){
   const password=$('new-password').value,confirm=$('confirm-password').value; if(password.length<8){$('recovery-error').textContent='Use at least 8 characters.';return;} if(password!==confirm){$('recovery-error').textContent='Passwords do not match.';return;}
@@ -777,7 +735,7 @@ function switchTab(tab){
   if(tab==='matches') loadMatches();
   if(tab==='me') renderMe();
 }
-async function enterApp(){ renderMe(); await refreshPhoneStatus(); await loadFeed(); }
+async function enterApp(){ renderMe(); await loadFeed(); }
 
 function openFilters(){
   $('filter-min-age').value=discoverFilters.minAge; $('filter-max-age').value=discoverFilters.maxAge;
@@ -954,33 +912,12 @@ function renderMe(){
   $('me-card').innerHTML=`
     <div class="row">
       ${ph?`<img src="${esc(ph)}" alt="Your photo">`:`<div class="avatar-fallback">${esc((me.name||'?')[0])}</div>`}
-      <div><b style="font-size:1.15rem">${esc(me.name)}, ${ageOf(me.dob)}</b>${me.username?`<br><span class="hint">@${esc(me.username)}</span>`:''}<br><span class="tag">✓ Photo verified${me.phone_verified?' · ✓ Mobile verified':''} · ${esc(me.city)}</span></div>
+      <div><b style="font-size:1.15rem">${esc(me.name)}, ${ageOf(me.dob)}</b>${me.username?`<br><span class="hint">@${esc(me.username)}</span>`:''}<br><span class="tag">✓ Photo verified · ${esc(me.city)}</span></div>
     </div>
     <p style="font-size:.92rem;color:var(--ink-soft)">${esc(me.bio||'')}</p>
     ${(me.job_title||me.education)?`<p class="hint">${[me.job_title,me.education].filter(Boolean).map(esc).join(' · ')}</p>`:''}
     <div class="chips">${(me.interests||[]).map(i=>`<span class="chip">${esc(i)}</span>`).join('')}</div>
     <p class="hint" style="margin-top:12px">${esc(INTENTION_LABELS[me.dating_intention]||'')}</p>`;
-}
-
-async function refreshPhoneStatus(){
-  const {data:{user}}=await db.auth.getUser(); const verified=Boolean(user?.phone_confirmed_at);
-  $('phone-status').textContent=verified?'Mobile number verified':'Mobile number not verified';
-  $('phone-status-detail').textContent=verified?'Your profile has an extra trust signal.':'Add a second trust signal to your profile.';
-  $('phone-action').textContent=verified?'Verified ✓':'Verify'; $('phone-action').disabled=verified;
-  if(verified && !me.phone_verified){ const {error}=await db.from('profiles').update({phone_verified:true}).eq('id',me.id); if(!error)me.phone_verified=true; }
-}
-function normalizePhone(value){ const clean=value.replace(/[\s()-]/g,''); return /^\+\d{10,15}$/.test(clean)?clean:''; }
-function openPhoneVerify(){ pendingPhone=''; $('phone-error').textContent=''; $('phone-otp-wrap').style.display='none'; $('phone-modal').classList.add('open'); }
-async function sendPhoneOtp(){
-  pendingPhone=normalizePhone($('phone-number').value); if(!pendingPhone){$('phone-error').textContent='Enter a valid number with country code, for example +919876543210.';return;}
-  const btn=$('send-phone-otp'); btn.disabled=true; btn.textContent='Sending…'; const {error}=await db.auth.updateUser({phone:pendingPhone}); btn.disabled=false; btn.textContent='Resend code';
-  if(error){$('phone-error').textContent=error.message;return;} $('phone-error').textContent=''; $('phone-otp-wrap').style.display='block'; $('phone-otp').focus();
-}
-async function verifyPhoneOtp(){
-  const token=$('phone-otp').value.trim(); if(!/^\d{6}$/.test(token)){$('phone-error').textContent='Enter the 6-digit code.';return;}
-  const btn=$('verify-phone-otp'); btn.disabled=true; btn.textContent='Verifying…'; const {error}=await db.auth.verifyOtp({phone:pendingPhone,token,type:'phone_change'}); btn.disabled=false; btn.textContent='Verify mobile';
-  if(error){$('phone-error').textContent=error.message;return;} const {error:profileError}=await db.from('profiles').update({phone_verified:true}).eq('id',me.id);
-  if(profileError){$('phone-error').textContent=profileError.message;return;} me.phone_verified=true; closeModal('phone-modal'); await refreshPhoneStatus(); renderMe(); toast('Mobile number verified.');
 }
 
 function openEditProfile(){
